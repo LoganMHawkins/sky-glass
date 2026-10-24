@@ -68,9 +68,9 @@ npx wrangler login        # once
 npx wrangler deploy       # first deploy also creates the KV namespace
 ```
 
-`wrangler deploy` prints the Worker's URL (`https://skyglass-proxy.<subdomain>.workers.dev`). Put it in
-`SKYGLASS_PROXY_URL` in `project.yml`, then `xcodegen generate`. While that setting is empty the app goes
-straight to CelesTrak. Check the cron with `npx wrangler tail`.
+It is deployed at `https://skyglass-proxy.logan-d80.workers.dev` (KV namespace `skyglass-proxy-gp`), which is
+the `SKYGLASS_PROXY_URL` in `project.yml`. If that URL changes, update the setting and run `xcodegen generate`;
+an empty value makes the app go straight to CelesTrak. Check the cron with `npx wrangler tail`.
 
 ### Run it locally
 

@@ -263,7 +263,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.loganhawkins.skyglass;
 				SDKROOT = iphoneos;
-				SKYGLASS_PROXY_URL = "";
+				SKYGLASS_PROXY_URL = "https://skyglass-proxy.logan-d80.workers.dev";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
@@ -284,7 +284,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.loganhawkins.skyglass;
 				SDKROOT = iphoneos;
-				SKYGLASS_PROXY_URL = "";
+				SKYGLASS_PROXY_URL = "https://skyglass-proxy.logan-d80.workers.dev";
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;

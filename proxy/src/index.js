@@ -23,7 +23,7 @@ export default {
     let stored = await env.GP.getWithMetadata(key(group), { type: "text", cacheTtl: 300 });
     if (stored.value === null) {
       // Nothing cached yet (fresh deploy, before the first cron run): try once now.
-      await refresh(env, group);
+      console.log(`${group}: ${await refresh(env, group)}`);
       stored = await env.GP.getWithMetadata(key(group), "text");
     }
     if (stored.value === null) {

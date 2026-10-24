@@ -25,7 +25,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: NO
         # Caching proxy in proxy/ (Cloudflare Worker). Empty skips it and goes straight to CelesTrak.
-        SKYGLASS_PROXY_URL: ""
+        SKYGLASS_PROXY_URL: https://skyglass-proxy.logan-d80.workers.dev
     info:
       path: Skyglass/Info.plist
       properties:
