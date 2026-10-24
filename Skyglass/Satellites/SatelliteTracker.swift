@@ -307,31 +307,78 @@ final class SatelliteTracker {
     }
 
     private static func fetch(_ group: SatGroup) async throws -> [Satellite] {
-        let url = URL(string: "https://celestrak.org/NORAD/elements/gp.php?GROUP=\(group.celestrakGroup)&FORMAT=json")!
+        if let records = try? await loadRecords(query: "GROUP=\(group.celestrakGroup)", cacheName: group.rawValue) {
+            return records.compactMap { Satellite(omm: $0, group: group) }
+        }
+        // CelesTrak answers each query only once per IP until its data next updates (about every 2 hours)
+        // and returns 403 otherwise, so a phone sharing a network with another downloader can get nothing.
+        // Fall back to the full active catalogue, which is a separate query, and filter it.
+        let all = try await ActiveCatalog.shared.records()
+        let sats = all.filter { group.matchesFallback($0) }.compactMap { Satellite(omm: $0, group: group) }
+        guard !sats.isEmpty else { throw URLError(.badServerResponse) }
+        return sats
+    }
+
+    /// Fresh cache (< 6 h) → network → stale cache, in that order.
+    fileprivate static func loadRecords(query: String, cacheName: String) async throws -> [OMM] {
+        let url = URL(string: "https://celestrak.org/NORAD/elements/gp.php?\(query)&FORMAT=json")!
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("celestrak-\(group.rawValue).json")
-        var data: Data?
+            .appendingPathComponent("celestrak-\(cacheName).json")
         if let mod = (try? FileManager.default.attributesOfItem(atPath: cache.path))?[.modificationDate] as? Date,
-           Date().timeIntervalSince(mod) < 6 * 3600 {
-            data = try? Data(contentsOf: cache)
+           Date().timeIntervalSince(mod) < 6 * 3600,
+           let data = try? Data(contentsOf: cache),
+           let records = try? JSONDecoder().decode([OMM].self, from: data) {
+            return records
         }
-        if data == nil {
-            do {
-                var request = URLRequest(url: url)
-                request.timeoutInterval = 40
-                let (d, response) = try await URLSession.shared.data(for: request)
-                // CelesTrak answers repeat requests with a plain-text note instead of JSON.
-                guard (response as? HTTPURLResponse)?.statusCode == 200, d.first == UInt8(ascii: "[") else {
-                    throw URLError(.badServerResponse)
-                }
-                try? d.write(to: cache, options: .atomic)
-                data = d
-            } catch {
-                data = try? Data(contentsOf: cache)
-                if data == nil { throw error }
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 60
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200, data.first == UInt8(ascii: "[") else {
+                throw URLError(.badServerResponse)
             }
+            let records = try JSONDecoder().decode([OMM].self, from: data)
+            try? data.write(to: cache, options: .atomic)
+            return records
+        } catch {
+            guard let data = try? Data(contentsOf: cache),
+                  let records = try? JSONDecoder().decode([OMM].self, from: data) else { throw error }
+            return records
         }
-        let records = try JSONDecoder().decode([OMM].self, from: data ?? Data())
-        return records.compactMap { Satellite(omm: $0, group: group) }
+    }
+}
+
+/// Shares one download of CelesTrak's active catalogue between every group that needs the fallback.
+private actor ActiveCatalog {
+    static let shared = ActiveCatalog()
+    private var task: Task<[OMM], Error>?
+
+    func records() async throws -> [OMM] {
+        if let task { return try await task.value }
+        let t = Task { try await SatelliteTracker.loadRecords(query: "GROUP=active", cacheName: "active") }
+        task = t
+        do {
+            return try await t.value
+        } catch {
+            task = nil
+            throw error
+        }
+    }
+}
+
+extension SatGroup {
+    /// Picks this group's satellites out of the active catalogue when the group query is refused.
+    func matchesFallback(_ omm: OMM) -> Bool {
+        let name = omm.OBJECT_NAME.uppercased()
+        switch self {
+        case .starlink:
+            return name.hasPrefix("STARLINK")
+        case .station:
+            let vehicles = ["ISS ", "CSS ", "SOYUZ", "PROGRESS", "DRAGON", "CYGNUS", "TIANZHOU", "SHENZHOU", "HTV"]
+            return Satellite.crewedStations[omm.NORAD_CAT_ID] != nil || vehicles.contains { name.hasPrefix($0) }
+        case .visual:
+            // Hubble plus large, bright Earth-observation and weather satellites.
+            return [20580, 25994, 27424, 39084, 49260, 28654, 33591, 43013].contains(omm.NORAD_CAT_ID)
+        }
     }
 }

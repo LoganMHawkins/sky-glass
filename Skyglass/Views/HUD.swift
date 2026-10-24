@@ -124,7 +124,11 @@ struct StatusChips: View {
             ForEach(model.activeSatGroups, id: \.self) { group in
                 switch model.satellites.loadState[group] {
                 case .loading: Chip(text: "Loading \(group.title)…", symbol: nil)
-                case .failed: Chip(text: "Couldn't load \(group.title) — check your connection", symbol: "wifi.exclamationmark")
+                case .failed:
+                    Button { model.satellites.retryFailed() } label: {
+                        Chip(text: "Couldn't load \(group.title) — tap to retry", symbol: "arrow.clockwise")
+                    }
+                    .buttonStyle(.plain)
                 default: EmptyView()
                 }
             }
