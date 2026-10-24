@@ -1,6 +1,6 @@
 #!/bin/bash
 # Archives Skyglass and uploads it to App Store Connect for TestFlight.
-# Needs: an app record for ca.theboldbureau.skyglass in App Store Connect,
+# Needs: an app record for ca.loganhawkins.skyglass in App Store Connect,
 # and Xcode signed in to your Apple ID (Xcode > Settings > Accounts).
 # Usage: Tools/testflight.sh [build-number]   (defaults to a timestamp; every upload needs a new one)
 set -euo pipefail

@@ -1,6 +1,6 @@
 name: Skyglass
 options:
-  bundleIdPrefix: ca.theboldbureau
+  bundleIdPrefix: ca.loganhawkins
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true
@@ -17,7 +17,7 @@ targets:
       - Skyglass
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: ca.theboldbureau.skyglass
+        PRODUCT_BUNDLE_IDENTIFIER: ca.loganhawkins.skyglass
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
