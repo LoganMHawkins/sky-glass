@@ -17,7 +17,9 @@ struct SkyRenderer {
         if model.layers.contains(.sky) {
             if model.showConstellations { drawConstellations(&ctx, proj) }
             let moon = model.bodies[.moon]
+            let hideBelow = !model.showBelowHorizon
             for p in model.skyPoints {
+                if hideBelow, p.altitude < 0, p.id != model.selectedID { continue }
                 guard let pt = proj.project(p.vector), bounds.contains(pt) else { continue }
                 drawSkyPoint(&ctx, p, at: pt, moon: moon)
                 hits.append(HitTarget(id: p.id, point: pt, priority: p.priority))
@@ -28,6 +30,7 @@ struct SkyRenderer {
         for group in model.activeSatGroups {
             for p in model.satellites.points[group] ?? [] {
                 if hideDim, p.dimmed, p.id != model.selectedID { continue }
+                if !model.showBelowHorizon, p.altitude < 0, p.id != model.selectedID { continue }
                 let v = p.vector(at: now)
                 guard let pt = proj.project(v), bounds.contains(pt) else { continue }
                 drawSatellite(&ctx, p, at: pt, time: now, proj: proj)

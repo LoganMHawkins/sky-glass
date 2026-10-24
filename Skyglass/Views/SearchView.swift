@@ -32,11 +32,11 @@ struct SearchView: View {
                 }
                 ForEach(items) { item in
                     Button { onPick(item.id) } label: { row(item) }
-                        .listRowBackground(Color.white.opacity(0.05))
+                        .listRowBackground(Theme.ink.opacity(0.05))
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(SpaceBackdrop().ignoresSafeArea())
+            .background(SpaceBackdrop(adaptive: true).ignoresSafeArea())
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Stars, planets, ISS, Starlink…")
             .navigationTitle("Explore")
             .navigationBarTitleDisplayMode(.inline)
@@ -46,7 +46,7 @@ struct SearchView: View {
                 }
             }
         }
-        .presentationBackground(Theme.void)
+        .presentationBackground(Theme.sheetBase)
     }
 
     private func row(_ item: SkyModel.SearchItem) -> some View {
@@ -65,17 +65,17 @@ struct SearchView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.ink)
                 Text(item.detail)
                     .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .foregroundStyle(Theme.ink.opacity(0.55))
             }
             Spacer()
             if let alt = item.altitude {
                 Text(alt > 0 ? "↑ \(Int(alt.rounded()))°" : "below")
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .monospacedDigit()
-                    .foregroundStyle(alt > 0 ? Theme.rose : .white.opacity(0.35))
+                    .foregroundStyle(alt > 0 ? Theme.rose : Theme.ink.opacity(0.35))
             }
         }
         .contentShape(Rectangle())

@@ -17,7 +17,7 @@ struct SkyglassApp: App {
                 RootView().environment(model)
                 #endif
             }
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(model.appearance.scheme)
             .tint(Theme.rose)
         }
     }

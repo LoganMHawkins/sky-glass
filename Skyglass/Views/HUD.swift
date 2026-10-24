@@ -4,10 +4,11 @@ struct HUD: View {
     @Environment(SkyModel.self) private var model
     var onDetails: (String) -> Void
     var onSearch: () -> Void
+    var onSettings: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
-            TopBar(onSearch: onSearch)
+            TopBar(onSearch: onSearch, onSettings: onSettings)
             StatusChips()
             Spacer(minLength: 0)
             if let id = model.focusID, let info = model.info(for: id) {
@@ -29,9 +30,9 @@ struct HUD: View {
 struct TopBar: View {
     @Environment(SkyModel.self) private var model
     var onSearch: () -> Void
+    var onSettings: () -> Void
 
     var body: some View {
-        @Bindable var model = model
         HStack(spacing: 10) {
             HeadingPill()
             Spacer(minLength: 0)
@@ -45,29 +46,16 @@ struct TopBar: View {
                     .buttonStyle(.plain)
                     .glassEffect(.regular.interactive(), in: .circle)
 
-                    Menu {
-                        Section("Overlay") {
-                            Toggle("Constellation lines", systemImage: "point.3.connected.trianglepath.dotted", isOn: $model.showConstellations)
-                            Toggle("Labels", systemImage: "textformat", isOn: $model.showLabels)
-                            Toggle("Only naked-eye satellites", systemImage: "eye", isOn: $model.onlyVisibleSatellites)
-                        }
-                        Picker("Stars", systemImage: "star", selection: $model.magnitudeLimit) {
-                            Text("Brightest only").tag(2.0)
-                            Text("City sky").tag(3.5)
-                            Text("All in catalogue").tag(5.0)
-                        }
-                        if model.zoom > 1.01 {
-                            Button("Reset zoom", systemImage: "arrow.down.right.and.arrow.up.left") { model.setZoom(1) }
-                        }
-                    } label: {
-                        Image(systemName: "slider.horizontal.3")
+                    Button(action: onSettings) {
+                        Image(systemName: "gearshape")
                             .font(.system(size: 17, weight: .semibold))
                             .frame(width: 46, height: 46)
                     }
+                    .buttonStyle(.plain)
                     .glassEffect(.regular.interactive(), in: .circle)
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.ink)
         }
     }
 }
@@ -83,19 +71,19 @@ struct HeadingPill: View {
                     .foregroundStyle(Theme.ember)
                     .rotationEffect(.degrees(-look.azimuth))
                 Text("\(Astro.compassPoint(look.azimuth)) \(Int(look.azimuth.rounded()) % 360)°")
-                Rectangle().fill(.white.opacity(0.25)).frame(width: 1, height: 14)
+                Rectangle().fill(Theme.ink.opacity(0.25)).frame(width: 1, height: 14)
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.rose)
                 Text("\(Int(look.altitude.rounded()))°")
                 if model.zoom > 1.01 {
-                    Rectangle().fill(.white.opacity(0.25)).frame(width: 1, height: 14)
+                    Rectangle().fill(Theme.ink.opacity(0.25)).frame(width: 1, height: 14)
                     Text("\(Fmt.number(model.zoom, digits: 1))×")
                 }
             }
             .font(.system(size: 15, weight: .semibold, design: .rounded))
             .monospacedDigit()
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.ink)
             .padding(.horizontal, 16)
             .frame(height: 46)
             .glassEffect(.regular, in: .capsule)
@@ -151,7 +139,7 @@ struct Chip: View {
             Text(text)
         }
         .font(.system(size: 12, weight: .semibold, design: .rounded))
-        .foregroundStyle(.white.opacity(0.9))
+        .foregroundStyle(Theme.ink.opacity(0.9))
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
         .glassEffect(.regular, in: .capsule)
@@ -166,41 +154,48 @@ struct LayerBar: View {
 
     private func count(_ layer: SkyLayer) -> String {
         switch layer {
-        case .sky: return "\(model.skyObjectsUp) up"
+        case .sky: return "\(model.skyObjectsUp) overhead"
         case .satellites, .starlink:
             let groups = layer.groups
             if groups.contains(where: { model.satellites.loadState[$0] == .loading }) { return "loading" }
             let n = groups.reduce(0) { $0 + (model.satellites.aboveHorizon[$1] ?? 0) }
-            return model.layers.contains(layer) ? "\(n) up" : "off"
+            return model.layers.contains(layer) ? "\(n) overhead" : "off"
         }
     }
 
     var body: some View {
         GlassEffectContainer(spacing: 10) {
-            HStack(spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
                 ForEach(SkyLayer.allCases) { layer in
                     let on = model.layers.contains(layer)
-                    Button {
-                        withAnimation(.spring(duration: 0.3)) { model.toggle(layer) }
-                    } label: {
-                        VStack(spacing: 3) {
-                            Image(systemName: layer.symbol)
-                                .font(.system(size: 18, weight: .semibold))
-                                .symbolEffect(.bounce, value: on)
-                            Text(layer.title)
-                                .font(.system(size: 12, weight: .bold, design: .rounded))
-                            Text(count(layer))
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
-                                .monospacedDigit()
-                                .opacity(0.7)
+                    VStack(spacing: 5) {
+                        Button {
+                            withAnimation(.spring(duration: 0.3)) { model.toggle(layer) }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: layer.symbol)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .symbolEffect(.bounce, value: on)
+                                Text(layer.title)
+                                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            }
+                            .foregroundStyle(on ? Theme.ink : Theme.ink.opacity(0.5))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 40)
+                            .contentShape(.capsule)
                         }
-                        .foregroundStyle(on ? .white : .white.opacity(0.5))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
-                        .contentShape(.capsule)
+                        .buttonStyle(.plain)
+                        .glassEffect(on ? .regular.tint(layer.tint.opacity(0.5)).interactive() : .regular.interactive(), in: .capsule)
+
+                        Text(count(layer))
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.white.opacity(on ? 0.75 : 0.4))
+                            .shadow(color: .black.opacity(0.6), radius: 3)
+                            .contentTransition(.numericText())
                     }
-                    .buttonStyle(.plain)
-                    .glassEffect(on ? .regular.tint(layer.tint.opacity(0.5)).interactive() : .regular.interactive(), in: .capsule)
                 }
             }
         }
@@ -222,11 +217,11 @@ struct GlanceCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(info.name)
                         .font(.system(size: 21, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.ink)
                         .lineLimit(1)
                     Text(info.subtitle)
                         .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(Theme.ink.opacity(0.65))
                         .lineLimit(1)
                 }
                 Spacer(minLength: 0)
@@ -237,7 +232,7 @@ struct GlanceCard: View {
                             .frame(width: 32, height: 32)
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(Theme.ink.opacity(0.8))
                     .glassEffect(.regular.interactive(), in: .circle)
                 } else {
                     Image(systemName: "scope")
@@ -274,19 +269,19 @@ struct StatTile: View {
             Text(stat.label.uppercased())
                 .font(.system(size: 9.5, weight: .bold, design: .rounded))
                 .tracking(1.2)
-                .foregroundStyle(Theme.rose.opacity(0.8))
+                .foregroundStyle(Theme.accentInk.opacity(0.85))
             Text(stat.value)
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 11)
         .padding(.vertical, 9)
-        .background(.white.opacity(0.06), in: .rect(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.white.opacity(0.08), lineWidth: 1))
+        .background(Theme.ink.opacity(0.06), in: .rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.ink.opacity(0.08), lineWidth: 1))
     }
 }
 

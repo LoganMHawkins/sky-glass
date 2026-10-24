@@ -41,7 +41,8 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        UIUserInterfaceStyle: Dark
+        UIViewControllerBasedStatusBarAppearance: false
+        UIStatusBarStyle: UIStatusBarStyleLightContent
         UIRequiredDeviceCapabilities:
           - arm64
         NSCameraUsageDescription: Skyglass shows the live sky through your camera and draws stars, planets and satellites on top of it.

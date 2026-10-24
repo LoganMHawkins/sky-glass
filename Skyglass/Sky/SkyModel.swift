@@ -9,13 +9,33 @@ final class SkyModel {
     let satellites = SatelliteTracker()
     @ObservationIgnored let orientation = OrientationProvider()
 
-    var layers: Set<SkyLayer> = [.sky, .satellites] { didSet { syncSatelliteLoads() } }
+    var layers: Set<SkyLayer> = [.sky, .satellites] {
+        didSet {
+            syncSatelliteLoads()
+            Self.defaults.set(layers.map(\.rawValue), forKey: "layers")
+        }
+    }
     var selectedID: String?
     private(set) var centeredID: String?
-    var showConstellations = true
-    var showLabels = true
-    var magnitudeLimit: Double = 5.0 { didSet { refresh() } }
-    var onlyVisibleSatellites = false
+
+    // Settings, remembered between launches
+    var appearance: AppearanceMode = .system { didSet { Self.defaults.set(appearance.rawValue, forKey: "appearance") } }
+    var showConstellations = true { didSet { Self.defaults.set(showConstellations, forKey: "showConstellations") } }
+    var showLabels = true { didSet { Self.defaults.set(showLabels, forKey: "showLabels") } }
+    var showBelowHorizon = true { didSet { Self.defaults.set(showBelowHorizon, forKey: "showBelowHorizon") } }
+    var magnitudeLimit: Double = 5.0 {
+        didSet {
+            Self.defaults.set(magnitudeLimit, forKey: "magnitudeLimit")
+            refresh()
+        }
+    }
+    var onlyVisibleSatellites = false { didSet { Self.defaults.set(onlyVisibleSatellites, forKey: "onlyVisibleSatellites") } }
+    var keepScreenAwake = true {
+        didSet {
+            Self.defaults.set(keepScreenAwake, forKey: "keepScreenAwake")
+            UIApplication.shared.isIdleTimerDisabled = keepScreenAwake
+        }
+    }
     var zoom: Double = 1
     private(set) var tick = 0
     private(set) var simulatedSky = false
@@ -48,12 +68,27 @@ final class SkyModel {
         return 2 * atan(tan(f / 2) / zoom) * Astro.rad
     }
 
+    @ObservationIgnored private static let defaults = UserDefaults.standard
+
+    init() {
+        let d = Self.defaults
+        if let raw = d.string(forKey: "appearance"), let mode = AppearanceMode(rawValue: raw) { appearance = mode }
+        if let saved = d.stringArray(forKey: "layers") { layers = Set(saved.compactMap(SkyLayer.init(rawValue:))) }
+        if d.object(forKey: "showConstellations") != nil { showConstellations = d.bool(forKey: "showConstellations") }
+        if d.object(forKey: "showLabels") != nil { showLabels = d.bool(forKey: "showLabels") }
+        if d.object(forKey: "showBelowHorizon") != nil { showBelowHorizon = d.bool(forKey: "showBelowHorizon") }
+        if d.object(forKey: "magnitudeLimit") != nil { magnitudeLimit = d.double(forKey: "magnitudeLimit") }
+        if d.object(forKey: "onlyVisibleSatellites") != nil { onlyVisibleSatellites = d.bool(forKey: "onlyVisibleSatellites") }
+        if d.object(forKey: "keepScreenAwake") != nil { keepScreenAwake = d.bool(forKey: "keepScreenAwake") }
+    }
+
     // MARK: Lifecycle
 
     func start() {
         guard !started else { return }
         started = true
         location.onAuthorized = { [weak self] in self?.orientation.start(trueNorth: true) }
+        UIApplication.shared.isIdleTimerDisabled = keepScreenAwake
         location.start()
         orientation.start()
         simulatedSky = !orientation.isLive
@@ -259,6 +294,26 @@ final class SkyModel {
         case .saturn: Color(red: 0.96, green: 0.87, blue: 0.6)
         case .uranus: Color(red: 0.62, green: 0.9, blue: 0.95)
         case .neptune: Color(red: 0.5, green: 0.62, blue: 1.0)
+        }
+    }
+}
+
+enum AppearanceMode: String, CaseIterable, Identifiable {
+    case system, light, dark
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    var symbol: String {
+        switch self {
+        case .system: "circle.lefthalf.filled"
+        case .light: "sun.max"
+        case .dark: "moon.stars"
+        }
+    }
+    var scheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
         }
     }
 }

@@ -1,3 +1,4 @@
+import SafariServices
 import SwiftUI
 
 struct DetailView: View {
@@ -5,6 +6,7 @@ struct DetailView: View {
     @Environment(\.dismiss) private var dismiss
     let id: String
     @State private var passes: [SatPass]?
+    @State private var reading: LearnLink?
 
     var body: some View {
         NavigationStack {
@@ -16,9 +18,11 @@ struct DetailView: View {
                         liveGrid(info)
                         if id.hasPrefix("sat:") { passesCard }
                         ForEach(info.sections) { SectionCard(section: $0) }
+                        let links = model.learnLinks(for: id)
+                        if !links.isEmpty { LearnMoreCard(links: links) { reading = $0 } }
                         Text("Positions are calculated on your phone from orbital elements\(id.hasPrefix("sat:") ? " published by CelesTrak" : ""), so they work offline.")
                             .font(.system(size: 11, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.4))
+                            .foregroundStyle(Theme.ink.opacity(0.4))
                             .multilineTextAlignment(.center)
                             .padding(.top, 4)
                     }
@@ -30,7 +34,7 @@ struct DetailView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(SpaceBackdrop().ignoresSafeArea())
+            .background(SpaceBackdrop(adaptive: true).ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
@@ -46,7 +50,10 @@ struct DetailView: View {
             }
         }
         .presentationDetents([.large])
-        .presentationBackground(Theme.void)
+        .presentationBackground(Theme.sheetBase)
+        .sheet(item: $reading) { link in
+            SafariView(url: link.url).ignoresSafeArea()
+        }
         .task(id: id) {
             if id.hasPrefix("sat:") { passes = await model.passes(for: id) }
         }
@@ -60,15 +67,15 @@ struct DetailView: View {
                 .padding(.bottom, 10)
             Text(info.name)
                 .font(.system(size: 34, weight: .heavy, design: .rounded))
-                .foregroundStyle(LinearGradient(colors: [.white, Theme.rose], startPoint: .top, endPoint: .bottom))
+                .foregroundStyle(LinearGradient(colors: [Theme.ink, Theme.rose], startPoint: .top, endPoint: .bottom))
                 .multilineTextAlignment(.center)
             Text(info.subtitle)
                 .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(Theme.ink.opacity(0.7))
             FlowTags(tags: info.tags)
             Text(info.blurb)
                 .font(.system(size: 15, design: .rounded))
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(Theme.ink.opacity(0.85))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
                 .padding(.top, 4)
@@ -92,7 +99,7 @@ struct DetailView: View {
                 Text("LIVE")
                     .font(.system(size: 11, weight: .heavy, design: .rounded))
                     .tracking(2)
-                    .foregroundStyle(Theme.rose)
+                    .foregroundStyle(Theme.accentInk)
             }
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                 ForEach(info.live) { StatTile(stat: $0) }
@@ -106,22 +113,22 @@ struct DetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Upcoming passes", systemImage: "arrow.up.and.down.and.sparkles")
                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.ink)
             if let passes {
                 if passes.isEmpty {
                     Text("No passes higher than 10° in the next two days.")
                         .font(.system(size: 13, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
                 }
                 ForEach(passes) { pass in
                     HStack(alignment: .firstTextBaseline) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(Fmt.dayTime(pass.rise))
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Theme.ink)
                             Text("\(Astro.compassPoint(pass.riseAzimuth)) → \(Astro.compassPoint(pass.setAzimuth)) · \(Int(pass.set.timeIntervalSince(pass.rise) / 60)) min")
                                 .font(.system(size: 12, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(Theme.ink.opacity(0.6))
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
@@ -130,18 +137,18 @@ struct DetailView: View {
                                 .foregroundStyle(Theme.rose)
                             Text(pass.visible ? "Visible" : "Not lit")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
-                                .foregroundStyle(pass.visible ? Theme.station : .white.opacity(0.4))
+                                .foregroundStyle(pass.visible ? Theme.station : Theme.ink.opacity(0.4))
                         }
                     }
                     .padding(.vertical, 4)
-                    if pass.id != passes.last?.id { Divider().overlay(.white.opacity(0.1)) }
+                    if pass.id != passes.last?.id { Divider().overlay(Theme.ink.opacity(0.1)) }
                 }
             } else {
                 HStack(spacing: 8) {
                     ProgressView().tint(Theme.rose)
                     Text("Predicting passes…")
                         .font(.system(size: 13, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
                 }
             }
         }
@@ -158,21 +165,21 @@ struct SectionCard: View {
         VStack(alignment: .leading, spacing: 10) {
             Label(section.title, systemImage: section.symbol)
                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.ink)
             VStack(spacing: 0) {
                 ForEach(section.rows) { row in
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         Text(row.label)
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(Theme.ink.opacity(0.6))
                         Spacer(minLength: 8)
                         Text(row.value)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.ink)
                             .multilineTextAlignment(.trailing)
                             .monospacedDigit()
                     }
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .padding(.vertical, 9)
-                    if row.id != section.rows.last?.id { Divider().overlay(.white.opacity(0.08)) }
+                    if row.id != section.rows.last?.id { Divider().overlay(Theme.ink.opacity(0.08)) }
                 }
             }
         }
@@ -190,7 +197,7 @@ struct FlowTags: View {
             ForEach(tags, id: \.self) { tag in
                 Text(tag)
                     .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(Theme.ink.opacity(0.9))
                     .lineLimit(1)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -198,4 +205,63 @@ struct FlowTags: View {
             }
         }
     }
+}
+
+struct LearnMoreCard: View {
+    let links: [LearnLink]
+    var onOpen: (LearnLink) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Learn more", systemImage: "books.vertical")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.ink)
+            VStack(spacing: 0) {
+                ForEach(links) { link in
+                    Button { onOpen(link) } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: link.symbol)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Theme.accentInk)
+                                .frame(width: 30, height: 30)
+                                .background(Theme.magenta.opacity(0.15), in: .circle)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(link.title)
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(Theme.ink)
+                                    .multilineTextAlignment(.leading)
+                                Text(link.source)
+                                    .font(.system(size: 11, design: .rounded))
+                                    .foregroundStyle(Theme.ink.opacity(0.5))
+                            }
+                            Spacer(minLength: 8)
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Theme.ink.opacity(0.4))
+                        }
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    if link.id != links.last?.id { Divider().overlay(Theme.ink.opacity(0.08)) }
+                }
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .spacePanel(cornerRadius: 24)
+    }
+}
+
+/// In-app Safari so reading doesn't throw you out of the sky view.
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let vc = SFSafariViewController(url: url)
+        vc.preferredControlTintColor = UIColor(Theme.magenta)
+        return vc
+    }
+
+    func updateUIViewController(_ vc: SFSafariViewController, context: Context) {}
 }

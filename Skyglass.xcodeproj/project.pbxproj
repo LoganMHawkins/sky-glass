@@ -21,8 +21,10 @@
 		85AE4FE606F55320BF8D2395 /* BodyArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A384437C87829C1F9203CE4 /* BodyArt.swift */; };
 		88908DB861B7ACF68D7AE613 /* SatelliteTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A924204334E5B51845F75943 /* SatelliteTracker.swift */; };
 		8C9590836C2D79D80C79DDF9 /* ObjectInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3444339D1A02F2CEBBF396A /* ObjectInfo.swift */; };
+		A3E06E53F87084712CFF2295 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 530F2DD60C18D8764E06BD2A /* SettingsView.swift */; };
 		A3EF35BFE8E21DB159E11EC8 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0E29FAB073F65C9391412D /* DetailView.swift */; };
 		A7BF8E1292C4A6ECB5A90FFC /* HUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE428A71DD42AE4260B07B9 /* HUD.swift */; };
+		AB2346B69CD7A8DBF658C9CB /* LearnLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12B3239EBDAEAF4D1E493FA /* LearnLinks.swift */; };
 		BC81990F2CFC1C1589655475 /* SkyRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24D829965C06FDF7E878775 /* SkyRenderer.swift */; };
 		DD9877BD543F3619C4A4BF75 /* SkyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9F058B62E17FAF9B944791A /* SkyModel.swift */; };
 		DECF7DF902982E9E755FA70E /* AstroMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7F7F904678AB56B4B7C9C7 /* AstroMath.swift */; };
@@ -35,6 +37,7 @@
 		1A384437C87829C1F9203CE4 /* BodyArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyArt.swift; sourceTree = "<group>"; };
 		3C0E29FAB073F65C9391412D /* DetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailView.swift; sourceTree = "<group>"; };
 		4C3C186CE30754DB11F88E4B /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		530F2DD60C18D8764E06BD2A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		549BDB529D554DEA95AA7442 /* OrientationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationProvider.swift; sourceTree = "<group>"; };
 		5BA99BDCC2276FD9767895F3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		63EDC81CDC2B3B7B8D98A76E /* SGP4.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SGP4.swift; sourceTree = "<group>"; };
@@ -53,6 +56,7 @@
 		A924204334E5B51845F75943 /* SatelliteTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteTracker.swift; sourceTree = "<group>"; };
 		B9F058B62E17FAF9B944791A /* SkyModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyModel.swift; sourceTree = "<group>"; };
 		CAE428A71DD42AE4260B07B9 /* HUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUD.swift; sourceTree = "<group>"; };
+		D12B3239EBDAEAF4D1E493FA /* LearnLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LearnLinks.swift; sourceTree = "<group>"; };
 		E7D4D02E48B934AA0386DAC3 /* SkyglassApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyglassApp.swift; sourceTree = "<group>"; };
 		F24D829965C06FDF7E878775 /* SkyRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyRenderer.swift; sourceTree = "<group>"; };
 		F71101FDBD518611B3055306 /* SolarSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SolarSystem.swift; sourceTree = "<group>"; };
@@ -66,6 +70,7 @@
 				CAE428A71DD42AE4260B07B9 /* HUD.swift */,
 				93DA368BE89B4100B9D80617 /* RootView.swift */,
 				4C3C186CE30754DB11F88E4B /* SearchView.swift */,
+				530F2DD60C18D8764E06BD2A /* SettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -151,6 +156,7 @@
 		FC9CD8E977ACD20BB3AA8D3B /* Sky */ = {
 			isa = PBXGroup;
 			children = (
+				D12B3239EBDAEAF4D1E493FA /* LearnLinks.swift */,
 				A3444339D1A02F2CEBBF396A /* ObjectInfo.swift */,
 				B9F058B62E17FAF9B944791A /* SkyModel.swift */,
 				F24D829965C06FDF7E878775 /* SkyRenderer.swift */,
@@ -246,6 +252,7 @@
 				4C8FD149E4162C68DB8D32A9 /* CameraController.swift in Sources */,
 				A3EF35BFE8E21DB159E11EC8 /* DetailView.swift in Sources */,
 				A7BF8E1292C4A6ECB5A90FFC /* HUD.swift in Sources */,
+				AB2346B69CD7A8DBF658C9CB /* LearnLinks.swift in Sources */,
 				4693DE5C49CA117C72742AD5 /* LocationProvider.swift in Sources */,
 				8C9590836C2D79D80C79DDF9 /* ObjectInfo.swift in Sources */,
 				3856444CD3222CCEEAD9B630 /* OrientationProvider.swift in Sources */,
@@ -254,6 +261,7 @@
 				32526DC3E3EDC68E294431E7 /* SatelliteArt.swift in Sources */,
 				88908DB861B7ACF68D7AE613 /* SatelliteTracker.swift in Sources */,
 				4F0E3383932E6D6327725240 /* SearchView.swift in Sources */,
+				A3E06E53F87084712CFF2295 /* SettingsView.swift in Sources */,
 				DD9877BD543F3619C4A4BF75 /* SkyModel.swift in Sources */,
 				BC81990F2CFC1C1589655475 /* SkyRenderer.swift in Sources */,
 				1BB732BD3ADF51F443B68BBB /* SkyTypes.swift in Sources */,

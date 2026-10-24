@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var detail: ObjectRef?
     @State private var showSearch = false
+    @State private var showSettings = false
 
     var body: some View {
         ZStack {
@@ -27,7 +28,7 @@ struct RootView: View {
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
 
-            HUD(onDetails: { detail = ObjectRef(id: $0) }, onSearch: { showSearch = true })
+            HUD(onDetails: { detail = ObjectRef(id: $0) }, onSearch: { showSearch = true }, onSettings: { showSettings = true })
         }
         .task { model.start() }
         .sheet(item: $detail) { ref in
@@ -40,6 +41,10 @@ struct RootView: View {
                 model.select(id)
             }
             .environment(model)
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+                .environment(model)
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { model.resume() } else if phase == .background { model.pause() }

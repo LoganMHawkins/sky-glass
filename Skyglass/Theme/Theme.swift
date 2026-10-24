@@ -13,6 +13,17 @@ enum Theme {
     static let station = Color(red: 1.0, green: 0.80, blue: 0.48)
     static let starlink = Color(red: 1.0, green: 0.45, blue: 0.86)
 
+    /// Text and hairlines on glass and sheets: white in dark mode, deep plum in light mode.
+    /// The sky itself always stays dark, so the overlay keeps using fixed colours.
+    static let ink = Color(UIColor { $0.userInterfaceStyle == .dark ? .white : UIColor(red: 0.17, green: 0.07, blue: 0.25, alpha: 1) })
+    /// Small caps labels and section headers: soft rose in dark mode, deeper magenta on light panels.
+    static let accentInk = Color(UIColor { $0.userInterfaceStyle == .dark
+        ? UIColor(red: 1.0, green: 0.553, blue: 0.761, alpha: 1)
+        : UIColor(red: 0.76, green: 0.16, blue: 0.5, alpha: 1) })
+    static let sheetBase = Color(UIColor { $0.userInterfaceStyle == .dark
+        ? UIColor(red: 0.027, green: 0.012, blue: 0.059, alpha: 1)
+        : UIColor(red: 0.97, green: 0.94, blue: 0.99, alpha: 1) })
+
     static let nebula = LinearGradient(colors: [ember, magenta, purple], startPoint: .leading, endPoint: .trailing)
     static let rim = LinearGradient(colors: [rose.opacity(0.7), purple.opacity(0.25), .clear, magenta.opacity(0.3)],
                                     startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -33,10 +44,27 @@ extension View {
 }
 
 /// Deep-space gradient with nebula glows; used behind the virtual sky and in sheets.
+/// `adaptive` backdrops (sheets) switch to a pale dawn version in light mode; the sky never does.
 struct SpaceBackdrop: View {
     var dust: Double = 0.7
+    var adaptive = false
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        if adaptive && scheme == .light {
+            ZStack {
+                LinearGradient(colors: [Color(red: 0.98, green: 0.95, blue: 1.0), Color(red: 0.96, green: 0.91, blue: 0.99), Color(red: 1.0, green: 0.91, blue: 0.93)],
+                               startPoint: .top, endPoint: .bottom)
+                RadialGradient(colors: [Theme.purple.opacity(0.2), .clear], center: UnitPoint(x: 0.15, y: 0.2), startRadius: 0, endRadius: 420)
+                RadialGradient(colors: [Theme.magenta.opacity(0.14), .clear], center: UnitPoint(x: 0.9, y: 0.55), startRadius: 0, endRadius: 360)
+                RadialGradient(colors: [Theme.ember.opacity(0.14), .clear], center: UnitPoint(x: 0.45, y: 1.05), startRadius: 0, endRadius: 460)
+            }
+        } else {
+            darkBody
+        }
+    }
+
+    private var darkBody: some View {
         ZStack {
             LinearGradient(colors: [Theme.void, Theme.deep, Theme.dusk], startPoint: .top, endPoint: .bottom)
             RadialGradient(colors: [Theme.purple.opacity(0.38), .clear], center: UnitPoint(x: 0.15, y: 0.2), startRadius: 0, endRadius: 420)
