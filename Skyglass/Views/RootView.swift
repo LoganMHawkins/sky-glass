@@ -8,6 +8,8 @@ struct RootView: View {
     @State private var detail: ObjectRef?
     @State private var showSearch = false
     @State private var showSettings = false
+    @State private var showGlobe = false
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
 
     var body: some View {
         ZStack {
@@ -24,13 +26,18 @@ struct RootView: View {
             SkyOverlay()
                 .ignoresSafeArea()
 
-            Reticle()
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-
-            HUD(onDetails: { detail = ObjectRef(id: $0) }, onSearch: { showSearch = true }, onSettings: { showSettings = true })
+            HUD(onDetails: { detail = ObjectRef(id: $0) }, onSearch: { showSearch = true }, onGlobe: { showGlobe = true }, onSettings: { showSettings = true })
         }
-        .task { model.start() }
+        // Permission prompts wait until the welcome screen has been dismissed.
+        .task { if hasSeenWelcome { model.start() } }
+        .fullScreenCover(isPresented: Binding(get: { !hasSeenWelcome }, set: { hasSeenWelcome = !$0 })) {
+            WelcomeView {
+                hasSeenWelcome = true
+                model.start()
+            }
+            .boringMode()
+            .environment(model)
+        }
         .sheet(item: $detail) { ref in
             DetailView(id: ref.id)
                 .environment(model)
@@ -41,6 +48,10 @@ struct RootView: View {
                 model.select(id)
             }
             .environment(model)
+        }
+        .fullScreenCover(isPresented: $showGlobe) {
+            GlobeView()
+                .environment(model)
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
@@ -88,24 +99,5 @@ struct SkyOverlay: View {
                     .onEnded { _ in zoomStart = nil }
             )
         }
-    }
-}
-
-struct Reticle: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .strokeBorder(.white.opacity(0.4), lineWidth: 1)
-                .frame(width: 20, height: 20)
-            ForEach(0..<4) { i in
-                Capsule()
-                    .fill(Theme.rose.opacity(0.85))
-                    .frame(width: 1.5, height: 4)
-                    .offset(y: -14)
-                    .rotationEffect(.degrees(Double(i) * 90))
-            }
-            Circle().fill(Theme.rose).frame(width: 2, height: 2)
-        }
-        .glow(Theme.magenta, radius: 6)
     }
 }

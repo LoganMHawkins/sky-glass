@@ -4,11 +4,12 @@ struct HUD: View {
     @Environment(SkyModel.self) private var model
     var onDetails: (String) -> Void
     var onSearch: () -> Void
+    var onGlobe: () -> Void
     var onSettings: () -> Void
 
     var body: some View {
         VStack(spacing: 10) {
-            TopBar(onSearch: onSearch, onSettings: onSettings)
+            TopBar(onSearch: onSearch, onGlobe: onGlobe, onSettings: onSettings)
             StatusChips()
             Spacer(minLength: 0)
             if let id = model.focusID, let info = model.info(for: id) {
@@ -30,6 +31,7 @@ struct HUD: View {
 struct TopBar: View {
     @Environment(SkyModel.self) private var model
     var onSearch: () -> Void
+    var onGlobe: () -> Void
     var onSettings: () -> Void
 
     var body: some View {
@@ -40,6 +42,14 @@ struct TopBar: View {
                 HStack(spacing: 8) {
                     Button(action: onSearch) {
                         Image(systemName: "magnifyingglass")
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(width: 46, height: 46)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: .circle)
+
+                    Button(action: onGlobe) {
+                        Image(systemName: "globe.americas.fill")
                             .font(.system(size: 17, weight: .semibold))
                             .frame(width: 46, height: 46)
                     }

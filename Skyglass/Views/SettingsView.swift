@@ -4,6 +4,7 @@ struct SettingsView: View {
     @Environment(SkyModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = true
 
     private var version: String {
         let info = Bundle.main.infoDictionary
@@ -56,8 +57,8 @@ struct SettingsView: View {
                     SettingsCard(title: "Sky overlay", symbol: "sparkles") {
                         SettingsToggle("Constellation lines", symbol: "point.3.connected.trianglepath.dotted", isOn: $model.showConstellations)
                         SettingsToggle("Labels", symbol: "textformat", isOn: $model.showLabels)
-                        SettingsToggle("Objects below the horizon", symbol: "arrow.down.to.line", isOn: $model.showBelowHorizon,
-                                       detail: "Shown faded so you can find things through the ground.")
+                        SettingsToggle("Show everything below the horizon", symbol: "arrow.down.to.line", isOn: $model.showBelowHorizon,
+                                       detail: "Stars, planets and every satellite on the far side of the Earth, shown faded so you can find them through the ground.")
                         VStack(alignment: .leading, spacing: 8) {
                             Label("Stars to show", systemImage: "star")
                                 .font(.system(size: 15, weight: .medium, design: .rounded))
@@ -121,6 +122,14 @@ struct SettingsView: View {
                             .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(Theme.ink.opacity(0.7))
                             .fixedSize(horizontal: false, vertical: true)
+                        Button {
+                            dismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { hasSeenWelcome = false }
+                        } label: {
+                            Label("Show welcome screen", systemImage: "sparkles")
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                        }
+                        .padding(.top, 6)
                     }
 
                     Wordmark(version: version)

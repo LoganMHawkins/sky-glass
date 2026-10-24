@@ -212,7 +212,8 @@ enum SatMath {
         var counts: [SatGroup: Int] = [:]
     }
 
-    static func propagateAll(_ work: [(SatGroup, [Satellite])], pinned: Satellite?, observer: Observer, date: Date, sunAltitude: Double) -> Batch {
+    static func propagateAll(_ work: [(SatGroup, [Satellite])], pinned: Satellite?, observer: Observer, date: Date, sunAltitude: Double,
+                             includeBelowHorizon: Bool = false) -> Batch {
         let jd = Astro.julianDate(date)
         let obsECEF = observerECEF(observer)
         let gmst = SGP4.gstime(jd)
@@ -223,7 +224,7 @@ enum SatMath {
         for (group, sats) in work {
             var pts: [SkyPoint] = []
             var up = 0
-            let minAlt = group == .starlink ? 0.0 : -10.0
+            let minAlt = includeBelowHorizon ? -91.0 : (group == .starlink ? 0.0 : -10.0)
             for sat in sats {
                 guard let s = state(for: sat, date: date, observer: observer, obsECEF: obsECEF, gmst: gmst, sunDir: sunDir) else { continue }
                 if s.altitude > 0 { up += 1 }
@@ -290,7 +291,7 @@ final class SatelliteTracker {
         for (group, state) in loadState where state == .failed { ensureLoaded(group) }
     }
 
-    func propagate(groups: Set<SatGroup>, observer: Observer, date: Date, pinned: String?, sunAltitude: Double) {
+    func propagate(groups: Set<SatGroup>, observer: Observer, date: Date, pinned: String?, sunAltitude: Double, includeBelowHorizon: Bool = false) {
         guard !busy else { return }
         let work = groups.compactMap { g in catalog[g].map { (g, $0) } }
         let pinnedSat = pinned.flatMap { byID[$0] }
@@ -300,7 +301,8 @@ final class SatelliteTracker {
         }
         busy = true
         Task.detached(priority: .userInitiated) {
-            let batch = SatMath.propagateAll(work, pinned: pinnedSat, observer: observer, date: date, sunAltitude: sunAltitude)
+            let batch = SatMath.propagateAll(work, pinned: pinnedSat, observer: observer, date: date, sunAltitude: sunAltitude,
+                                             includeBelowHorizon: includeBelowHorizon)
             await MainActor.run {
                 self.states = batch.states
                 self.points = batch.points

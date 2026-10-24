@@ -23,7 +23,7 @@ final class SkyModel {
     var boringMode = false { didSet { Self.defaults.set(boringMode, forKey: "boringMode") } }
     var showConstellations = true { didSet { Self.defaults.set(showConstellations, forKey: "showConstellations") } }
     var showLabels = true { didSet { Self.defaults.set(showLabels, forKey: "showLabels") } }
-    var showBelowHorizon = true { didSet { Self.defaults.set(showBelowHorizon, forKey: "showBelowHorizon") } }
+    var showBelowHorizon = false { didSet { Self.defaults.set(showBelowHorizon, forKey: "showBelowHorizon") } }
     var magnitudeLimit: Double = 5.0 {
         didSet {
             Self.defaults.set(magnitudeLimit, forKey: "magnitudeLimit")
@@ -237,7 +237,7 @@ final class SkyModel {
 
         let pinned = selectedID?.hasPrefix("sat:") == true ? selectedID : nil
         satellites.propagate(groups: Set(activeSatGroups), observer: obs, date: now, pinned: pinned,
-                             sunAltitude: horiz[Body.sun.id]?.altitude ?? 0)
+                             sunAltitude: horiz[Body.sun.id]?.altitude ?? 0, includeBelowHorizon: showBelowHorizon)
         tick &+= 1
     }
 
@@ -264,15 +264,22 @@ final class SkyModel {
         let now = CACurrentMediaTime()
         guard now - lastCenterCheck > 0.15 else { return }
         lastCenterCheck = now
-        func score(_ h: HitTarget) -> CGFloat { hypot(h.point.x - center.x, h.point.y - center.y) - CGFloat(h.priority) * 10 }
+        func distance(_ h: HitTarget) -> CGFloat { hypot(h.point.x - center.x, h.point.y - center.y) }
+        // Whatever sits right under the crosshair wins outright; only further out do brighter,
+        // more important objects get a pull.
+        func score(_ h: HitTarget) -> CGFloat {
+            let d = distance(h)
+            return d < 14 ? d - 1000 : d - CGFloat(h.priority) * 6
+        }
         var best: HitTarget?
-        for h in hits where hypot(h.point.x - center.x, h.point.y - center.y) < 70 {
+        for h in hits where distance(h) < 55 {
             if best == nil || score(h) < score(best!) { best = h }
         }
-        // Hysteresis: hold on to the current object until something clearly better comes along.
+        // Light hysteresis so the card doesn't flicker between two neighbours, but only while
+        // the current object is still close and nothing is clearly closer.
         if let current = centeredID, let ch = hits.first(where: { $0.id == current }),
-           hypot(ch.point.x - center.x, ch.point.y - center.y) < 95,
-           best == nil || score(best!) > score(ch) - 18 {
+           distance(ch) < 30, let b = best, b.id != current,
+           score(b) > score(ch) - 8 {
             best = ch
         }
         let newID = best?.id

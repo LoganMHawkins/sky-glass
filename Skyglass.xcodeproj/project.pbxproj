@@ -15,6 +15,7 @@
 		4693DE5C49CA117C72742AD5 /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82EE087F974780A1C591E67A /* LocationProvider.swift */; };
 		49AC00FC7EE884702F38EAA9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A508BADD4483CBB103D4933C /* Assets.xcassets */; };
 		4C8FD149E4162C68DB8D32A9 /* CameraController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F219F0B10FD0366605227CC /* CameraController.swift */; };
+		4E0802F359CC6D64EF592E06 /* GlobeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D61CB72413EE21A138657A /* GlobeView.swift */; };
 		4F0E3383932E6D6327725240 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C3C186CE30754DB11F88E4B /* SearchView.swift */; };
 		6BCB41B12DFBEE0CFDFC39CD /* SGP4.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63EDC81CDC2B3B7B8D98A76E /* SGP4.swift */; };
 		74BF0383BD5829847B47C6EA /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93DA368BE89B4100B9D80617 /* RootView.swift */; };
@@ -25,6 +26,7 @@
 		A3EF35BFE8E21DB159E11EC8 /* DetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C0E29FAB073F65C9391412D /* DetailView.swift */; };
 		A7BF8E1292C4A6ECB5A90FFC /* HUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE428A71DD42AE4260B07B9 /* HUD.swift */; };
 		AB2346B69CD7A8DBF658C9CB /* LearnLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12B3239EBDAEAF4D1E493FA /* LearnLinks.swift */; };
+		AC5C5BE6A333DFDBFE09EEE2 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 989A08562D7815C4DA55AD67 /* WelcomeView.swift */; };
 		BC81990F2CFC1C1589655475 /* SkyRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24D829965C06FDF7E878775 /* SkyRenderer.swift */; };
 		DD9877BD543F3619C4A4BF75 /* SkyModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9F058B62E17FAF9B944791A /* SkyModel.swift */; };
 		DECF7DF902982E9E755FA70E /* AstroMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D7F7F904678AB56B4B7C9C7 /* AstroMath.swift */; };
@@ -46,11 +48,13 @@
 		82EE087F974780A1C591E67A /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
 		85255BEB75EF3708DFB26A4E /* ArtGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtGallery.swift; sourceTree = "<group>"; };
 		93DA368BE89B4100B9D80617 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		989A08562D7815C4DA55AD67 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		99F35E7358B636C1CD90B63C /* Skyglass.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Skyglass.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A3A81685AC048F2FE7E487D /* SatelliteArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteArt.swift; sourceTree = "<group>"; };
 		9CE2F9FA6243BC1EC752FCD1 /* SkyTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkyTypes.swift; sourceTree = "<group>"; };
 		9F219F0B10FD0366605227CC /* CameraController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraController.swift; sourceTree = "<group>"; };
 		A0AF22EB5051DA02A235476D /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		A0D61CB72413EE21A138657A /* GlobeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobeView.swift; sourceTree = "<group>"; };
 		A3444339D1A02F2CEBBF396A /* ObjectInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectInfo.swift; sourceTree = "<group>"; };
 		A508BADD4483CBB103D4933C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A924204334E5B51845F75943 /* SatelliteTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteTracker.swift; sourceTree = "<group>"; };
@@ -67,10 +71,12 @@
 			isa = PBXGroup;
 			children = (
 				3C0E29FAB073F65C9391412D /* DetailView.swift */,
+				A0D61CB72413EE21A138657A /* GlobeView.swift */,
 				CAE428A71DD42AE4260B07B9 /* HUD.swift */,
 				93DA368BE89B4100B9D80617 /* RootView.swift */,
 				4C3C186CE30754DB11F88E4B /* SearchView.swift */,
 				530F2DD60C18D8764E06BD2A /* SettingsView.swift */,
+				989A08562D7815C4DA55AD67 /* WelcomeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -251,6 +257,7 @@
 				85AE4FE606F55320BF8D2395 /* BodyArt.swift in Sources */,
 				4C8FD149E4162C68DB8D32A9 /* CameraController.swift in Sources */,
 				A3EF35BFE8E21DB159E11EC8 /* DetailView.swift in Sources */,
+				4E0802F359CC6D64EF592E06 /* GlobeView.swift in Sources */,
 				A7BF8E1292C4A6ECB5A90FFC /* HUD.swift in Sources */,
 				AB2346B69CD7A8DBF658C9CB /* LearnLinks.swift in Sources */,
 				4693DE5C49CA117C72742AD5 /* LocationProvider.swift in Sources */,
@@ -269,6 +276,7 @@
 				15B0DEDE0EAC56856A8E82D9 /* SolarSystem.swift in Sources */,
 				FA6CF1F9C3FE745A3C4A07AB /* StarCatalog.swift in Sources */,
 				12BE681EF1129A4578E03AF4 /* Theme.swift in Sources */,
+				AC5C5BE6A333DFDBFE09EEE2 /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

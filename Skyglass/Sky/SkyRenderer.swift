@@ -39,6 +39,7 @@ struct SkyRenderer {
         }
 
         drawFocus(&ctx, proj, size: size, time: now, hits: hits)
+        drawReticle(&ctx, at: proj.center)
 
         model.hitTargets = hits
         model.noteCenter(hits, center: CGPoint(x: size.width / 2, y: size.height / 2))
@@ -146,6 +147,11 @@ struct SkyRenderer {
 
     private func drawSatellite(_ ctx: inout GraphicsContext, _ p: SkyPoint, at pt: CGPoint, time: TimeInterval, proj: SkyProjector) {
         let below = p.altitude < 0
+        // Thousands can sit on the far side of the Earth; keep those to a cheap faded dot.
+        if below, p.id != model.selectedID {
+            ctx.fill(circle(pt, p.kind == .station ? 2.5 : 1.4), with: .color(p.color.opacity(0.3)))
+            return
+        }
         let alpha = below ? 0.3 : (p.dimmed ? 0.5 : 1.0)
         let design = model.satellites.byID[p.id]?.design ?? .generic
 
@@ -170,6 +176,21 @@ struct SkyRenderer {
     }
 
     // MARK: Selection, reticle target and off-screen guide
+
+    /// Drawn in the same canvas as the sky so it sits exactly on the projection centre,
+    /// the point objects are picked from.
+    private func drawReticle(_ ctx: inout GraphicsContext, at c: CGPoint) {
+        glow(&ctx, c, 16, Theme.magenta, 0.25)
+        ctx.stroke(circle(c, 10), with: .color(.white.opacity(0.45)), lineWidth: 1)
+        for i in 0..<4 {
+            let a = Double(i) * .pi / 2
+            var tick = Path()
+            tick.move(to: CGPoint(x: c.x + CGFloat(cos(a)) * 12, y: c.y + CGFloat(sin(a)) * 12))
+            tick.addLine(to: CGPoint(x: c.x + CGFloat(cos(a)) * 16, y: c.y + CGFloat(sin(a)) * 16))
+            ctx.stroke(tick, with: .color(Theme.rose.opacity(0.9)), style: StrokeStyle(lineWidth: 1.5, lineCap: .round))
+        }
+        ctx.fill(circle(c, 1), with: .color(Theme.rose))
+    }
 
     private func hasPermanentLabel(_ id: String) -> Bool {
         model.showLabels && (model.labeledIDs.contains(id) || model.kind(of: id) == .station)
