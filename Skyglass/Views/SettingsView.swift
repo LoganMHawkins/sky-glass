@@ -62,6 +62,8 @@ struct SettingsView: View {
                     }
 
                     SettingsCard(title: "Satellites", symbol: "antenna.radiowaves.left.and.right") {
+                        SettingsToggle("Show all active satellites", symbol: "circle.grid.cross", isOn: $model.allActiveSatellites,
+                                       detail: "Adds thousands of other working satellites to the Satellites layer. Most are too faint to see by eye.")
                         SettingsToggle("Only naked-eye visible", symbol: "eye", isOn: $model.onlyVisibleSatellites,
                                        detail: "Hides satellites in Earth's shadow or in daylight.")
                         ForEach(SatGroup.allCases, id: \.self) { group in
@@ -134,7 +136,7 @@ struct SettingsView: View {
         case .loading: return "Loading…"
         case .failed: return "Couldn't load"
         case .ready: return "\(Fmt.number(Double(model.satellites.totals[group] ?? 0))) tracked"
-        case nil: return "Layer off"
+        case nil: return group == .active ? "Off" : "Layer off"
         }
     }
 }

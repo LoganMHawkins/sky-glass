@@ -156,7 +156,7 @@ struct LayerBar: View {
         switch layer {
         case .sky: return "\(model.skyObjectsUp) overhead"
         case .satellites, .starlink:
-            let groups = layer.groups
+            let groups = model.satGroups(for: layer)
             if groups.contains(where: { model.satellites.loadState[$0] == .loading }) { return "loading" }
             let n = groups.reduce(0) { $0 + (model.satellites.aboveHorizon[$1] ?? 0) }
             return model.layers.contains(layer) ? "\(n) overhead" : "off"

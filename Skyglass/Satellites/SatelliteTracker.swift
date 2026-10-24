@@ -3,13 +3,14 @@ import SwiftUI
 import simd
 
 enum SatGroup: String, CaseIterable, Sendable {
-    case station, visual, starlink
+    case station, visual, starlink, active   // active = every other working satellite (opt-in)
 
     var celestrakGroup: String {
         switch self {
         case .station: "stations"
         case .visual: "visual"
         case .starlink: "starlink"
+        case .active: "active"
         }
     }
 
@@ -18,6 +19,7 @@ enum SatGroup: String, CaseIterable, Sendable {
         case .station: "space stations"
         case .visual: "bright satellites"
         case .starlink: "Starlink"
+        case .active: "other active satellites"
         }
     }
 }
@@ -265,7 +267,17 @@ final class SatelliteTracker {
             let sats = try? await Self.fetch(group)
             await MainActor.run {
                 guard let sats, !sats.isEmpty else { self.loadState[group] = .failed; return }
-                let fresh = sats.filter { self.byID[$0.id] == nil }
+                // The curated groups take precedence over the catch-all active group, whichever loads first.
+                let fresh = sats.filter { s in
+                    guard let existing = self.byID[s.id] else { return true }
+                    return existing.group == .active && group != .active
+                }
+                if group != .active, var others = self.catalog[.active] {
+                    let taken = Set(fresh.map(\.id))
+                    others.removeAll { taken.contains($0.id) }
+                    self.catalog[.active] = others
+                    self.totals[.active] = others.count
+                }
                 self.catalog[group] = fresh
                 for s in fresh { self.byID[s.id] = s }
                 self.totals[group] = fresh.count
@@ -307,6 +319,11 @@ final class SatelliteTracker {
     }
 
     private static func fetch(_ group: SatGroup) async throws -> [Satellite] {
+        if group == .active {
+            // Shares the one download with the Starlink fallback.
+            let all = try await ActiveCatalog.shared.records()
+            return all.filter { group.matchesFallback($0) }.compactMap { Satellite(omm: $0, group: group) }
+        }
         if let records = try? await loadRecords(group: group.celestrakGroup, cacheName: group.rawValue) {
             return records.compactMap { Satellite(omm: $0, group: group) }
         }
@@ -398,6 +415,8 @@ extension SatGroup {
         case .visual:
             // Hubble plus large, bright Earth-observation and weather satellites.
             return [20580, 25994, 27424, 39084, 49260, 28654, 33591, 43013].contains(omm.NORAD_CAT_ID)
+        case .active:
+            return !name.hasPrefix("STARLINK")
         }
     }
 }

@@ -29,6 +29,12 @@ final class SkyModel {
             refresh()
         }
     }
+    var allActiveSatellites = false {
+        didSet {
+            Self.defaults.set(allActiveSatellites, forKey: "allActiveSatellites")
+            syncSatelliteLoads()
+        }
+    }
     var onlyVisibleSatellites = false { didSet { Self.defaults.set(onlyVisibleSatellites, forKey: "onlyVisibleSatellites") } }
     var keepScreenAwake = true {
         didSet {
@@ -57,7 +63,12 @@ final class SkyModel {
     /// The object the glance card describes: whatever was tapped, else whatever sits under the reticle.
     var focusID: String? { selectedID ?? centeredID }
 
-    var activeSatGroups: [SatGroup] { SkyLayer.allCases.filter { layers.contains($0) }.flatMap(\.groups) }
+    var activeSatGroups: [SatGroup] { SkyLayer.allCases.filter { layers.contains($0) }.flatMap(satGroups(for:)) }
+
+    /// Satellite groups behind a layer; the Satellites layer adds every active satellite when that setting is on.
+    func satGroups(for layer: SkyLayer) -> [SatGroup] {
+        layer == .satellites && allActiveSatellites ? layer.groups + [.active] : layer.groups
+    }
 
     var lookDirection: Horizontal { Astro.horizontal(from: orientation.basis.forward) }
 
@@ -78,6 +89,7 @@ final class SkyModel {
         if d.object(forKey: "showLabels") != nil { showLabels = d.bool(forKey: "showLabels") }
         if d.object(forKey: "showBelowHorizon") != nil { showBelowHorizon = d.bool(forKey: "showBelowHorizon") }
         if d.object(forKey: "magnitudeLimit") != nil { magnitudeLimit = d.double(forKey: "magnitudeLimit") }
+        if d.object(forKey: "allActiveSatellites") != nil { allActiveSatellites = d.bool(forKey: "allActiveSatellites") }
         if d.object(forKey: "onlyVisibleSatellites") != nil { onlyVisibleSatellites = d.bool(forKey: "onlyVisibleSatellites") }
         if d.object(forKey: "keepScreenAwake") != nil { keepScreenAwake = d.bool(forKey: "keepScreenAwake") }
     }

@@ -337,6 +337,10 @@ extension SkyModel {
                 subtitle = "Near the space stations"
                 symbol = "antenna.radiowaves.left.and.right"
                 blurb = "Tracked in CelesTrak's space-station group — a module, visiting spacecraft or small satellite flying close to a station."
+            case .active:
+                subtitle = "Active satellite\(sat.launchYear.map { " · launched \($0)" } ?? "")"
+                symbol = "antenna.radiowaves.left.and.right"
+                blurb = "One of thousands of working satellites in low orbit: Earth observation, communications, science and technology demos. Most are too faint to see without binoculars."
             case .visual:
                 subtitle = "Bright satellite\(sat.launchYear.map { " · launched \($0)" } ?? "")"
                 symbol = "antenna.radiowaves.left.and.right"
@@ -425,7 +429,7 @@ extension SkyModel {
                 items.append(SearchItem(id: sat.id, name: sat.displayName, detail: "NORAD \(sat.norad)",
                                         symbol: sat.kind == .station ? "person.2.fill" : sat.kind == .starlink ? "wifi" : "antenna.radiowaves.left.and.right",
                                         tint: sat.kind.color, altitude: satellites.states[sat.id]?.altitude ?? -90,
-                                        rank: sat.kind == .station ? 0 : 3, art: .satellite(sat.design)))
+                                        rank: sat.kind == .station ? 0 : (group == .active ? 4 : 3), art: .satellite(sat.design)))
             }
         }
         return items.sorted {
