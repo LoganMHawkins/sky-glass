@@ -30,6 +30,8 @@
 	<string>Your location is used to work out exactly which stars, planets and satellites are above you right now.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>Motion sensors tell Skyglass where your phone is pointing so it can line labels up with the sky.</string>
+	<key>SkyglassProxyURL</key>
+	<string>$(SKYGLASS_PROXY_URL)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

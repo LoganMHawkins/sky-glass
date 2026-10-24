@@ -24,6 +24,8 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: NO
+        # Caching proxy in proxy/ (Cloudflare Worker). Empty skips it and goes straight to CelesTrak.
+        SKYGLASS_PROXY_URL: ""
     info:
       path: Skyglass/Info.plist
       properties:
@@ -32,6 +34,7 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
         ITSAppUsesNonExemptEncryption: false
+        SkyglassProxyURL: $(SKYGLASS_PROXY_URL)
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIApplicationSceneManifest:

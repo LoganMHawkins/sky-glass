@@ -1,0 +1,16 @@
+name = "skyglass-proxy"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# KV holds the last good copy of each CelesTrak group. With no `id`, `wrangler deploy` creates the
+# namespace on first deploy; `wrangler dev` uses a local simulation.
+[[kv_namespaces]]
+binding = "GP"
+
+# Refresh every 2 hours, a few minutes after CelesTrak's own update.
+[triggers]
+crons = ["7 */2 * * *"]
+
+[observability]
+enabled = true

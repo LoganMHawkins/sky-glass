@@ -307,7 +307,7 @@ final class SatelliteTracker {
     }
 
     private static func fetch(_ group: SatGroup) async throws -> [Satellite] {
-        if let records = try? await loadRecords(query: "GROUP=\(group.celestrakGroup)", cacheName: group.rawValue) {
+        if let records = try? await loadRecords(group: group.celestrakGroup, cacheName: group.rawValue) {
             return records.compactMap { Satellite(omm: $0, group: group) }
         }
         // CelesTrak answers each query only once per IP until its data next updates (about every 2 hours)
@@ -319,9 +319,17 @@ final class SatelliteTracker {
         return sats
     }
 
-    /// Fresh cache (< 6 h) → network → stale cache, in that order.
-    fileprivate static func loadRecords(query: String, cacheName: String) async throws -> [OMM] {
-        let url = URL(string: "https://celestrak.org/NORAD/elements/gp.php?\(query)&FORMAT=json")!
+    /// Base URL of the caching proxy in `proxy/` (Info.plist `SkyglassProxyURL`). The `SKYGLASS_PROXY_URL`
+    /// environment variable overrides it, e.g. to point a Simulator run at `wrangler dev`.
+    private static let proxyBase: URL? = {
+        let value = ProcessInfo.processInfo.environment["SKYGLASS_PROXY_URL"]
+            ?? Bundle.main.object(forInfoDictionaryKey: "SkyglassProxyURL") as? String
+        guard let value, !value.isEmpty else { return nil }
+        return URL(string: value)
+    }()
+
+    /// Fresh cache (< 6 h) → proxy → CelesTrak → stale cache, in that order.
+    fileprivate static func loadRecords(group: String, cacheName: String) async throws -> [OMM] {
         let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("celestrak-\(cacheName).json")
         if let mod = (try? FileManager.default.attributesOfItem(atPath: cache.path))?[.modificationDate] as? Date,
@@ -330,21 +338,32 @@ final class SatelliteTracker {
            let records = try? JSONDecoder().decode([OMM].self, from: data) {
             return records
         }
-        do {
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 60
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard (response as? HTTPURLResponse)?.statusCode == 200, data.first == UInt8(ascii: "[") else {
-                throw URLError(.badServerResponse)
+        var sources: [URL] = []
+        if let proxyBase { sources.append(proxyBase.appendingPathComponent("gp/\(group).json")) }
+        sources.append(URL(string: "https://celestrak.org/NORAD/elements/gp.php?GROUP=\(group)&FORMAT=json")!)
+        var lastError: Error = URLError(.badServerResponse)
+        for url in sources {
+            do {
+                let (records, data) = try await download(url)
+                try? data.write(to: cache, options: .atomic)
+                return records
+            } catch {
+                lastError = error
             }
-            let records = try JSONDecoder().decode([OMM].self, from: data)
-            try? data.write(to: cache, options: .atomic)
-            return records
-        } catch {
-            guard let data = try? Data(contentsOf: cache),
-                  let records = try? JSONDecoder().decode([OMM].self, from: data) else { throw error }
-            return records
         }
+        guard let data = try? Data(contentsOf: cache),
+              let records = try? JSONDecoder().decode([OMM].self, from: data) else { throw lastError }
+        return records
+    }
+
+    private static func download(_ url: URL) async throws -> ([OMM], Data) {
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 60
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200, data.first == UInt8(ascii: "[") else {
+            throw URLError(.badServerResponse)
+        }
+        return (try JSONDecoder().decode([OMM].self, from: data), data)
     }
 }
 
@@ -355,7 +374,7 @@ private actor ActiveCatalog {
 
     func records() async throws -> [OMM] {
         if let task { return try await task.value }
-        let t = Task { try await SatelliteTracker.loadRecords(query: "GROUP=active", cacheName: "active") }
+        let t = Task { try await SatelliteTracker.loadRecords(group: "active", cacheName: "active") }
         task = t
         do {
             return try await t.value
