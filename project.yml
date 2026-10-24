@@ -1,0 +1,46 @@
+name: Skyglass
+options:
+  bundleIdPrefix: ca.theboldbureau
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: W6U2585855
+    CODE_SIGN_STYLE: Automatic
+targets:
+  Skyglass:
+    type: application
+    platform: iOS
+    sources:
+      - Skyglass
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ca.theboldbureau.skyglass
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+    info:
+      path: Skyglass/Info.plist
+      properties:
+        CFBundleDisplayName: Skyglass
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIUserInterfaceStyle: Dark
+        UIRequiredDeviceCapabilities:
+          - arm64
+        NSCameraUsageDescription: Skyglass shows the live sky through your camera and draws stars, planets and satellites on top of it.
+        NSLocationWhenInUseUsageDescription: Your location is used to work out exactly which stars, planets and satellites are above you right now.
+        NSMotionUsageDescription: Motion sensors tell Skyglass where your phone is pointing so it can line labels up with the sky.
