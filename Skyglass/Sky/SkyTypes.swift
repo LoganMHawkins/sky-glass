@@ -24,8 +24,8 @@ enum SkyLayer: String, CaseIterable, Identifiable {
     var tint: Color {
         switch self {
         case .sky: Theme.magenta
-        case .satellites: Theme.purple
-        case .starlink: Theme.starlink
+        case .satellites: Theme.blue
+        case .starlink: .black
         }
     }
 

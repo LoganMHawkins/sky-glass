@@ -16,6 +16,11 @@ struct ArtGallery: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                section("Boring Mode check") {
+                    tile("Glass, normal") { Text("Aa").padding(14).glassEffect(.regular.tint(Theme.magenta.opacity(0.6)), in: .capsule) }
+                    tile("Glass, greyscale") { Text("Aa").padding(14).glassEffect(.regular.tint(Theme.magenta.opacity(0.6)), in: .capsule).grayscale(1) }
+                    tile("Planet, greyscale") { ArtView(art: .planet(.mars, ringTilt: 0), size: 48).grayscale(1) }
+                }
                 section("Solar System") {
                     ForEach(bodies, id: \.0) { item in tile(item.0) { ArtView(art: item.1, size: 64) } }
                 }

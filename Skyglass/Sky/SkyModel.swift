@@ -20,6 +20,7 @@ final class SkyModel {
 
     // Settings, remembered between launches
     var appearance: AppearanceMode = .system { didSet { Self.defaults.set(appearance.rawValue, forKey: "appearance") } }
+    var boringMode = false { didSet { Self.defaults.set(boringMode, forKey: "boringMode") } }
     var showConstellations = true { didSet { Self.defaults.set(showConstellations, forKey: "showConstellations") } }
     var showLabels = true { didSet { Self.defaults.set(showLabels, forKey: "showLabels") } }
     var showBelowHorizon = true { didSet { Self.defaults.set(showBelowHorizon, forKey: "showBelowHorizon") } }
@@ -44,7 +45,16 @@ final class SkyModel {
     }
     var zoom: Double = 1
     private(set) var tick = 0
-    private(set) var simulatedSky = false
+    /// No motion hardware (the Simulator), so the virtual sky is the only option.
+    private(set) var motionUnavailable = false
+    /// Browse by dragging instead of pointing the phone; turns the camera and motion off.
+    var virtualSky = false {
+        didSet {
+            Self.defaults.set(virtualSky, forKey: "virtualSky")
+            applyViewMode()
+        }
+    }
+    var simulatedSky: Bool { motionUnavailable || virtualSky }
     private(set) var compassNeedsCalibration = false
     private(set) var skyObjectsUp = 0
 
@@ -85,6 +95,8 @@ final class SkyModel {
         let d = Self.defaults
         if let raw = d.string(forKey: "appearance"), let mode = AppearanceMode(rawValue: raw) { appearance = mode }
         if let saved = d.stringArray(forKey: "layers") { layers = Set(saved.compactMap(SkyLayer.init(rawValue:))) }
+        if d.object(forKey: "virtualSky") != nil { virtualSky = d.bool(forKey: "virtualSky") }
+        if d.object(forKey: "boringMode") != nil { boringMode = d.bool(forKey: "boringMode") }
         if d.object(forKey: "showConstellations") != nil { showConstellations = d.bool(forKey: "showConstellations") }
         if d.object(forKey: "showLabels") != nil { showLabels = d.bool(forKey: "showLabels") }
         if d.object(forKey: "showBelowHorizon") != nil { showBelowHorizon = d.bool(forKey: "showBelowHorizon") }
@@ -103,8 +115,12 @@ final class SkyModel {
         UIApplication.shared.isIdleTimerDisabled = keepScreenAwake
         location.start()
         orientation.start()
-        simulatedSky = !orientation.isLive
-        if !simulatedSky { camera.start() }
+        motionUnavailable = !orientation.hasMotion
+        if simulatedSky {
+            orientation.useVirtual(true)
+        } else {
+            camera.start()
+        }
         syncSatelliteLoads()
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.refresh() }
@@ -112,8 +128,10 @@ final class SkyModel {
 
     func resume() {
         guard started else { return }
-        camera.resume()
-        if !simulatedSky { orientation.start(trueNorth: true) }
+        if !simulatedSky {
+            camera.resume()
+            orientation.start(trueNorth: true)
+        }
         satellites.retryFailed()
         refresh()
     }
@@ -121,6 +139,19 @@ final class SkyModel {
     func pause() {
         camera.pause()
         orientation.stop()
+    }
+
+    private func applyViewMode() {
+        guard started, !motionUnavailable else { return }
+        if virtualSky {
+            orientation.useVirtual(true)
+            camera.pause()
+        } else {
+            orientation.useVirtual(false)
+            camera.start()
+            camera.resume()
+            camera.setZoom(zoom)
+        }
     }
 
     func toggle(_ layer: SkyLayer) {

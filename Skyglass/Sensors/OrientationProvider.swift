@@ -58,6 +58,21 @@ final class OrientationProvider {
 
     func stop() { motion.stopDeviceMotionUpdates() }
 
+    /// Switches between the motion-driven camera and the drag-controlled virtual sky,
+    /// starting the virtual view wherever the phone was pointing.
+    func useVirtual(_ on: Bool) {
+        if on {
+            let look = Astro.horizontal(from: basis.forward)
+            motion.stopDeviceMotionUpdates()
+            isLive = false
+            simAltitude = min(89, max(-89, look.altitude))
+            simAzimuth = look.azimuth
+            updateSimBasis()
+        } else if motion.isDeviceMotionAvailable {
+            start(trueNorth: true)
+        }
+    }
+
     private func updateSimBasis() {
         guard !isLive else { return }
         basis = .looking(altitude: simAltitude, azimuth: simAzimuth)

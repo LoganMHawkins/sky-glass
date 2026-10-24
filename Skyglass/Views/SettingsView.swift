@@ -17,6 +17,15 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
+                    SettingsCard(title: "View", symbol: "camera.viewfinder") {
+                        SettingsToggle("Virtual sky", symbol: "hand.draw",
+                                       isOn: Binding(get: { model.simulatedSky }, set: { model.virtualSky = $0 }),
+                                       detail: model.motionUnavailable
+                                           ? "This device has no motion sensors, so the virtual sky is always on."
+                                           : "Browse by dragging instead of pointing your phone. Turns the camera and motion sensors off.")
+                            .disabled(model.motionUnavailable)
+                    }
+
                     SettingsCard(title: "Appearance", symbol: "paintpalette") {
                         HStack(spacing: 8) {
                             ForEach(AppearanceMode.allCases) { mode in
@@ -40,6 +49,8 @@ struct SettingsView: View {
                         }
                         Text("The sky view always stays dark so your eyes can adjust; this changes the panels and screens around it.")
                             .settingsFootnote()
+                        SettingsToggle("Boring Mode", symbol: "circle.lefthalf.striped.horizontal", isOn: $model.boringMode,
+                                       detail: "Takes all the colour away. Everything, including the camera, goes black and white.")
                     }
 
                     SettingsCard(title: "Sky overlay", symbol: "sparkles") {
@@ -128,7 +139,8 @@ struct SettingsView: View {
                 }
             }
         }
-        .presentationBackground(Theme.sheetBase)
+        .boringMode()
+        .presentationBackground(model.boringMode ? Theme.boringSheetBase : Theme.sheetBase)
     }
 
     private func status(for group: SatGroup) -> String {

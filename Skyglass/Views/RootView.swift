@@ -13,7 +13,7 @@ struct RootView: View {
         ZStack {
             Group {
                 if model.camera.isRunning && !model.simulatedSky {
-                    CameraPreview(session: model.camera.session)
+                    CameraPreview(session: model.camera.session, mono: model.boringMode, monoFrames: model.camera.monoFrames)
                     CameraTint()
                 } else {
                     SpaceBackdrop(dust: 0.22)
@@ -95,17 +95,17 @@ struct Reticle: View {
     var body: some View {
         ZStack {
             Circle()
-                .strokeBorder(.white.opacity(0.35), lineWidth: 1)
-                .frame(width: 54, height: 54)
+                .strokeBorder(.white.opacity(0.4), lineWidth: 1)
+                .frame(width: 20, height: 20)
             ForEach(0..<4) { i in
                 Capsule()
-                    .fill(Theme.rose.opacity(0.8))
-                    .frame(width: 2, height: 9)
-                    .offset(y: -34)
+                    .fill(Theme.rose.opacity(0.85))
+                    .frame(width: 1.5, height: 4)
+                    .offset(y: -14)
                     .rotationEffect(.degrees(Double(i) * 90))
             }
-            Circle().fill(Theme.rose).frame(width: 3, height: 3)
+            Circle().fill(Theme.rose).frame(width: 2, height: 2)
         }
-        .glow(Theme.magenta, radius: 10)
+        .glow(Theme.magenta, radius: 6)
     }
 }

@@ -50,7 +50,8 @@ struct DetailView: View {
             }
         }
         .presentationDetents([.large])
-        .presentationBackground(Theme.sheetBase)
+        .boringMode()
+        .presentationBackground(model.boringMode ? Theme.boringSheetBase : Theme.sheetBase)
         .sheet(item: $reading) { link in
             SafariView(url: link.url).ignoresSafeArea()
         }

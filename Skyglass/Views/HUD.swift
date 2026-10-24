@@ -181,13 +181,13 @@ struct LayerBar: View {
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
                             }
-                            .foregroundStyle(on ? Theme.ink : Theme.ink.opacity(0.5))
+                            .foregroundStyle(on ? (layer == .starlink ? .white : Theme.ink) : Theme.ink.opacity(0.5))
                             .frame(maxWidth: .infinity)
                             .frame(height: 40)
                             .contentShape(.capsule)
                         }
                         .buttonStyle(.plain)
-                        .glassEffect(on ? .regular.tint(layer.tint.opacity(0.5)).interactive() : .regular.interactive(), in: .capsule)
+                        .glassEffect(on ? .regular.tint(layer.tint.opacity(layer == .starlink ? 0.85 : (layer == .satellites ? 0.75 : 0.5))).interactive() : .regular.interactive(), in: .capsule)
 
                         Text(count(layer))
                             .font(.system(size: 10, weight: .semibold, design: .rounded))
@@ -252,7 +252,7 @@ struct GlanceCard: View {
                     .padding(.vertical, 4)
             }
             .buttonStyle(.glassProminent)
-            .tint(Theme.magenta)
+            .tint(Theme.purple)
             .controlSize(.large)
         }
         .padding(16)

@@ -11,7 +11,8 @@ enum Theme {
     static let lavender = Color(red: 0.80, green: 0.74, blue: 1.0)
     static let satellite = Color(red: 0.62, green: 0.80, blue: 1.0)
     static let station = Color(red: 1.0, green: 0.80, blue: 0.48)
-    static let starlink = Color(red: 1.0, green: 0.45, blue: 0.86)
+    static let starlink = Color(red: 0.86, green: 0.88, blue: 0.94)   // silver, like Starlink's own branding
+    static let blue = Color(red: 0.22, green: 0.45, blue: 0.98)
 
     /// Text and hairlines on glass and sheets: white in dark mode, deep plum in light mode.
     /// The sky itself always stays dark, so the overlay keeps using fixed colours.
@@ -20,6 +21,7 @@ enum Theme {
     static let accentInk = Color(UIColor { $0.userInterfaceStyle == .dark
         ? UIColor(red: 1.0, green: 0.553, blue: 0.761, alpha: 1)
         : UIColor(red: 0.76, green: 0.16, blue: 0.5, alpha: 1) })
+    static let boringSheetBase = Color(UIColor { $0.userInterfaceStyle == .dark ? .black : .white })
     static let sheetBase = Color(UIColor { $0.userInterfaceStyle == .dark
         ? UIColor(red: 0.027, green: 0.012, blue: 0.059, alpha: 1)
         : UIColor(red: 0.97, green: 0.94, blue: 0.99, alpha: 1) })
@@ -107,4 +109,18 @@ struct CameraTint: View {
         }
         .allowsHitTesting(false)
     }
+}
+
+/// Boring Mode: drains every colour from a screen. Sheets render separately from the main view,
+/// so each sheet applies this to itself too; the camera feed gets its own filter in `CameraPreview`.
+struct BoringModeModifier: ViewModifier {
+    @Environment(SkyModel.self) private var model
+
+    func body(content: Content) -> some View {
+        content.grayscale(model.boringMode ? 1 : 0)
+    }
+}
+
+extension View {
+    func boringMode() -> some View { modifier(BoringModeModifier()) }
 }

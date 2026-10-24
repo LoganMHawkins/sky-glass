@@ -46,7 +46,8 @@ struct SearchView: View {
                 }
             }
         }
-        .presentationBackground(Theme.sheetBase)
+        .boringMode()
+        .presentationBackground(model.boringMode ? Theme.boringSheetBase : Theme.sheetBase)
     }
 
     private func row(_ item: SkyModel.SearchItem) -> some View {

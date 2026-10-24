@@ -11,10 +11,10 @@ struct SkyglassApp: App {
                 if ProcessInfo.processInfo.arguments.contains("-artGallery") {
                     ArtGallery()
                 } else {
-                    RootView().environment(model)
+                    RootView().boringMode().environment(model)
                 }
                 #else
-                RootView().environment(model)
+                RootView().boringMode().environment(model)
                 #endif
             }
             .preferredColorScheme(model.appearance.scheme)
