@@ -299,27 +299,49 @@ struct ObjectGlyph: View {
             Circle()
                 .fill(RadialGradient(colors: [info.tint.opacity(0.55), info.tint.opacity(0)], center: .center, startRadius: 0, endRadius: size * 0.8))
                 .frame(width: size * 1.6, height: size * 1.6)
-            if let symbol = info.symbol {
+            if info.symbol != nil || isSatellite {
                 Circle()
                     .fill(Theme.void.opacity(0.55))
                     .overlay(Circle().strokeBorder(LinearGradient(colors: [info.tint.opacity(0.9), Theme.magenta.opacity(0.4)], startPoint: .top, endPoint: .bottom), lineWidth: 1))
                     .frame(width: size, height: size)
+            }
+            if let art = info.art {
+                ArtView(art: art, size: size)
+            } else if let symbol = info.symbol {
                 Image(systemName: symbol)
                     .font(.system(size: size * 0.42, weight: .semibold))
                     .foregroundStyle(info.tint)
-            } else {
-                Circle()
-                    .fill(RadialGradient(colors: [.white.opacity(0.95), info.tint, info.tint.opacity(0.35)],
-                                         center: UnitPoint(x: 0.35, y: 0.3), startRadius: 0, endRadius: size * 0.65))
-                    .frame(width: size, height: size)
-                if info.ringed {
-                    Ellipse()
-                        .stroke(info.tint.opacity(0.9), lineWidth: max(1.5, size * 0.04))
-                        .frame(width: size * 1.55, height: size * 0.42)
-                        .rotationEffect(.degrees(-18))
-                }
             }
         }
         .frame(width: size, height: size)
+    }
+
+    private var isSatellite: Bool {
+        if case .satellite = info.art { return true }
+        return false
+    }
+}
+
+/// Renders an object's artwork at glyph scale; draws past its frame so rings and spikes aren't clipped.
+struct ArtView: View {
+    let art: ObjectArt
+    let size: CGFloat
+
+    var body: some View {
+        Canvas { ctx, canvas in
+            let c = CGPoint(x: canvas.width / 2, y: canvas.height / 2)
+            switch art {
+            case .planet(let body, _):
+                BodyArt.draw(art, in: &ctx, at: c, radius: size * (body == .saturn ? 0.33 : 0.5), detailed: true)
+            case .star:
+                BodyArt.draw(art, in: &ctx, at: c, radius: size * 0.2, detailed: true)
+            case .satellite:
+                BodyArt.draw(art, in: &ctx, at: c, radius: size * 0.4, angle: -0.35, detailed: true)
+            default:
+                BodyArt.draw(art, in: &ctx, at: c, radius: size * 0.5, detailed: true)
+            }
+        }
+        .frame(width: size * 2, height: size * 2)
+        .allowsHitTesting(false)
     }
 }

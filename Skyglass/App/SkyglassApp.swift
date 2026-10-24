@@ -6,10 +6,19 @@ struct SkyglassApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(model)
-                .preferredColorScheme(.dark)
-                .tint(Theme.rose)
+            Group {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-artGallery") {
+                    ArtGallery()
+                } else {
+                    RootView().environment(model)
+                }
+                #else
+                RootView().environment(model)
+                #endif
+            }
+            .preferredColorScheme(.dark)
+            .tint(Theme.rose)
         }
     }
 }

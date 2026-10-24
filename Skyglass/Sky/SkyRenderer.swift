@@ -108,8 +108,7 @@ struct SkyRenderer {
         let alpha = below ? 0.35 : 1.0
         switch p.kind {
         case .star:
-            if p.radius > 2.6 { glow(&ctx, pt, p.radius * 4, p.color, 0.35 * alpha) }
-            ctx.fill(circle(pt, p.radius), with: .color(p.color.opacity(alpha)))
+            BodyArt.drawStar(&ctx, pt, p.radius, color: p.color, opacity: alpha, spikes: p.radius > 4.2)
             if let l = p.label { label(&ctx, l, at: pt, offset: p.radius, color: .white.opacity(0.75 * alpha), size: 11) }
 
         case .deepSky:
@@ -118,28 +117,23 @@ struct SkyRenderer {
             if let l = p.label { label(&ctx, l, at: pt, offset: 7, color: Theme.lavender.opacity(0.8 * alpha), size: 11) }
 
         case .planet:
-            glow(&ctx, pt, p.radius * 4.5, p.color, 0.45 * alpha)
-            ctx.fill(circle(pt, p.radius), with: .radialGradient(Gradient(colors: [.white, p.color]), center: CGPoint(x: pt.x - p.radius * 0.3, y: pt.y - p.radius * 0.3), startRadius: 0, endRadius: p.radius * 1.4))
-            if p.id == Body.saturn.id {
-                var ring = Path(ellipseIn: CGRect(x: pt.x - p.radius * 2, y: pt.y - p.radius * 0.6, width: p.radius * 4, height: p.radius * 1.2))
-                ring = ring.applying(CGAffineTransform(translationX: -pt.x, y: -pt.y).concatenating(CGAffineTransform(rotationAngle: -0.35)).concatenating(CGAffineTransform(translationX: pt.x, y: pt.y)))
-                ctx.stroke(ring, with: .color(p.color.opacity(0.85 * alpha)), lineWidth: 1.2)
-            }
-            if let l = p.label { label(&ctx, l, at: pt, offset: p.radius + 2, color: p.color.opacity(alpha), size: 13) }
+            guard let body = Body(rawValue: String(p.id.dropFirst(5))) else { return }
+            glow(&ctx, pt, p.radius * 3.2, p.color, 0.4 * alpha)
+            BodyArt.drawPlanet(&ctx, body, pt, p.radius, ringTilt: model.bodies[.saturn]?.ringTilt ?? 0, opacity: alpha)
+            let labelOffset = body == .saturn ? p.radius * 2.2 : p.radius + 2
+            if let l = p.label { label(&ctx, l, at: pt, offset: labelOffset, color: p.color.opacity(alpha), size: 13) }
 
         case .moon:
-            glow(&ctx, pt, p.radius * 3.5, Theme.lavender, 0.4 * alpha)
-            ctx.fill(circle(pt, p.radius), with: .color(Theme.deep.opacity(0.9 * alpha)))
+            glow(&ctx, pt, p.radius * 3.2, Theme.lavender, 0.35 * (moon?.illumination ?? 1) * alpha)
             if let m = moon {
-                ctx.fill(moonPath(center: pt, r: p.radius, lit: m.illumination, waxing: m.waxing), with: .color(p.color.opacity(alpha)))
+                BodyArt.drawMoon(&ctx, pt, p.radius, illumination: m.illumination, waxing: m.waxing, opacity: alpha)
             }
-            ctx.stroke(circle(pt, p.radius), with: .color(.white.opacity(0.25 * alpha)), lineWidth: 0.8)
             if let l = p.label { label(&ctx, l, at: pt, offset: p.radius + 2, color: .white.opacity(alpha), size: 13) }
 
         case .sun:
             glow(&ctx, pt, p.radius * 6, Theme.ember, 0.55 * alpha)
             glow(&ctx, pt, p.radius * 2.5, p.color, 0.9 * alpha)
-            ctx.fill(circle(pt, p.radius), with: .color(Color(red: 1, green: 0.95, blue: 0.85).opacity(alpha)))
+            BodyArt.drawSun(&ctx, pt, p.radius, opacity: alpha)
             if let l = p.label { label(&ctx, l, at: pt, offset: p.radius + 4, color: p.color.opacity(alpha), size: 13) }
 
         default:
@@ -147,29 +141,16 @@ struct SkyRenderer {
         }
     }
 
-    /// Lit region of the Moon: between the limb and an elliptical terminator.
-    private func moonPath(center c: CGPoint, r: CGFloat, lit k: Double, waxing: Bool) -> Path {
-        var p = Path()
-        let steps = 24
-        let side: CGFloat = waxing ? 1 : -1
-        for i in 0...steps {
-            let th = -Double.pi / 2 + Double.pi * Double(i) / Double(steps)
-            let pt = CGPoint(x: c.x + side * r * CGFloat(cos(th)), y: c.y + r * CGFloat(sin(th)))
-            if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
-        }
-        for i in stride(from: steps, through: 0, by: -1) {
-            let th = -Double.pi / 2 + Double.pi * Double(i) / Double(steps)
-            p.addLine(to: CGPoint(x: c.x + side * r * CGFloat(cos(th) * (1 - 2 * k)), y: c.y + r * CGFloat(sin(th))))
-        }
-        p.closeSubpath()
-        return p
-    }
-
     private func drawSatellite(_ ctx: inout GraphicsContext, _ p: SkyPoint, at pt: CGPoint, time: TimeInterval, proj: SkyProjector) {
         let below = p.altitude < 0
-        let alpha = below ? 0.3 : (p.dimmed ? 0.55 : 1.0)
-        let color = p.color.opacity(alpha)
+        let alpha = below ? 0.3 : (p.dimmed ? 0.5 : 1.0)
+        let design = model.satellites.byID[p.id]?.design ?? .generic
 
+        // Point the craft along its path across the screen.
+        var heading: CGFloat = 0
+        if let ahead = proj.project(p.vector(at: time + 10)) {
+            heading = atan2(ahead.y - pt.y, ahead.x - pt.x)
+        }
         if p.kind != .starlink, let tail = proj.project(p.vector(at: time - 20)) {
             var trail = Path()
             trail.move(to: tail)
@@ -177,17 +158,12 @@ struct SkyRenderer {
             ctx.stroke(trail, with: .linearGradient(Gradient(colors: [p.color.opacity(0), p.color.opacity(0.55 * alpha)]), startPoint: tail, endPoint: pt),
                        style: StrokeStyle(lineWidth: p.kind == .station ? 2 : 1.2, lineCap: .round))
         }
-        if p.kind == .station {
-            glow(&ctx, pt, 18, Theme.station, 0.5 * alpha)
-            let r = p.radius
-            var body = Path(roundedRect: CGRect(x: pt.x - r * 0.6, y: pt.y - r * 0.6, width: r * 1.2, height: r * 1.2), cornerRadius: 1.5)
-            body.addRect(CGRect(x: pt.x - r * 2.4, y: pt.y - 0.9, width: r * 4.8, height: 1.8))
-            ctx.fill(body, with: .color(color))
-            if let l = p.label { label(&ctx, l, at: pt, offset: r * 2.4, color: Theme.station.opacity(alpha), size: 13) }
-        } else {
-            if !p.dimmed { glow(&ctx, pt, p.radius * 3.5, p.color, 0.4 * alpha) }
-            ctx.fill(circle(pt, p.radius), with: .color(color))
+        let size = design.overlayHalfWidth
+        if !p.dimmed || p.kind == .station {
+            glow(&ctx, pt, size * (p.kind == .starlink ? 1.8 : 2.2), p.color, (p.kind == .station ? 0.5 : 0.35) * alpha)
         }
+        SatelliteArt.draw(design, in: &ctx, at: pt, halfWidth: size, angle: heading + design.flightAngleOffset, opacity: alpha, detailed: false, silhouette: p.color)
+        if let l = p.label { label(&ctx, l, at: pt, offset: size + 2, color: Theme.station.opacity(alpha), size: 13) }
     }
 
     // MARK: Selection, reticle target and off-screen guide

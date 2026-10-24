@@ -129,7 +129,7 @@ final class SkyModel {
             let h = Astro.horizontal(ra: b.ra, dec: b.dec, observer: obs, lst: lst)
             horiz[body.id] = h
             let kind: ObjectKind = body == .sun ? .sun : body == .moon ? .moon : .planet
-            let radius: CGFloat = body == .sun ? 16 : body == .moon ? 14 : CGFloat(min(8, max(3, 5.5 - b.magnitude * 0.6)))
+            let radius = Self.bodyRadius(body)
             points.append(SkyPoint(id: body.id, kind: kind, vector: h.vector, radius: radius, color: Self.bodyColor(body),
                                    label: body.name, altitude: h.altitude, priority: 5))
         }
@@ -232,15 +232,19 @@ final class SkyModel {
 
     static func starRadius(_ mag: Double) -> CGFloat { CGFloat(max(1.1, 4.8 - 0.85 * mag)) }
 
-    static func starColor(_ spectral: String) -> Color {
-        switch spectral.first {
-        case "O", "B": Color(red: 0.72, green: 0.82, blue: 1.0)
-        case "A": Color(red: 0.93, green: 0.94, blue: 1.0)
-        case "F": Color(red: 1.0, green: 0.97, blue: 0.9)
-        case "G": Color(red: 1.0, green: 0.92, blue: 0.74)
-        case "K": Color(red: 1.0, green: 0.78, blue: 0.56)
-        case "M": Color(red: 1.0, green: 0.6, blue: 0.5)
-        default: .white
+    static func starColor(_ spectral: String) -> Color { StarColor.color(spectral) }
+
+    /// On-sky size of each body: big enough for its artwork to read, ordered roughly by brightness.
+    static func bodyRadius(_ body: Body) -> CGFloat {
+        switch body {
+        case .sun: 16
+        case .moon: 16
+        case .jupiter: 11
+        case .venus: 9
+        case .saturn: 8
+        case .mars: 8
+        case .mercury: 6
+        case .uranus, .neptune: 5.5
         }
     }
 

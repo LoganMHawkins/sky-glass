@@ -51,11 +51,17 @@ struct SearchView: View {
 
     private func row(_ item: SkyModel.SearchItem) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: item.symbol)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(item.tint)
-                .frame(width: 34, height: 34)
-                .background(item.tint.opacity(0.14), in: .circle)
+            ZStack {
+                Circle().fill(item.tint.opacity(0.14)).frame(width: 34, height: 34)
+                if let art = item.art {
+                    ArtView(art: art, size: 24)
+                } else {
+                    Image(systemName: item.symbol)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(item.tint)
+                }
+            }
+            .frame(width: 34, height: 34)
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))

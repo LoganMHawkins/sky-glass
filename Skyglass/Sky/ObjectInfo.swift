@@ -21,7 +21,7 @@ struct ObjectInfo {
     let kind: ObjectKind
     var symbol: String?          // nil → drawn as a planet sphere
     let tint: Color
-    var ringed = false
+    var art: ObjectArt?          // custom drawing; takes over from `symbol` in glyphs
     let glance: [Stat]
     let live: [Stat]
     let blurb: String
@@ -145,11 +145,14 @@ extension SkyModel {
                               live: [.init("Altitude", Fmt.deg(h.altitude)), .init("Azimuth", Fmt.az(h.azimuth)),
                                      .init("Distance", Fmt.ly(s.distanceLy)), .init("Magnitude", Fmt.mag(s.mag))],
                               blurb: blurb, tags: [type, s.bayer, upTag(h)], isUp: h.altitude > 0)
+        info.art = .star(Self.starColor(s.spectral))
         guard detailed else { return info }
         info.sections = [
             .init(title: "The star", symbol: "sparkle", rows: [
                 .init("Designation", s.bayer), .init("Constellation", s.constellation), .init("Type", type),
-                .init("Spectral class", s.spectral), .init("Apparent magnitude", Fmt.mag(s.mag)),
+                .init("Spectral class", s.spectral),
+                .init("Colour", "\(StarColor.name(s.spectral)) · ≈ \(Fmt.number((StarColor.temperature(s.spectral) / 100).rounded() * 100)) K surface"),
+                .init("Apparent magnitude", Fmt.mag(s.mag)),
                 .init("Distance", Fmt.ly(s.distanceLy)), .init("Light you see left", leftText),
             ]),
             .init(title: "Position now", symbol: "scope", rows: positionRows(h, ra: p.ra, dec: p.dec)),
@@ -224,6 +227,7 @@ extension SkyModel {
                                   blurb: "A 4.6-billion-year-old ball of hydrogen and helium holding 99.8% of the Solar System's mass. Its light takes about eight minutes to reach you.",
                                   tags: ["Star", "G2V", upTag(h)], isUp: h.altitude > 0,
                                   warning: "Never look at the Sun directly or through binoculars or a telescope without a certified solar filter.")
+            info.art = .sun
             guard detailed else { return info }
             info.sections = [
                 timing(bodyAltitude(.sun), threshold: -0.27, rise: "Sunrise", set: "Sunset", peak: "Solar noon"),
@@ -246,6 +250,7 @@ extension SkyModel {
                                          .init("Distance", Fmt.km(b.distanceKm)), .init("Phase", phase)],
                                   blurb: "Earth's only natural satellite, probably formed when a Mars-sized body slammed into the young Earth. It always shows us the same face.",
                                   tags: [phase, "Day \(Fmt.number(b.moonAge, digits: 1)) of 29.5", upTag(h)], isUp: h.altitude > 0)
+            info.art = .moon(illumination: b.illumination, waxing: b.waxing)
             guard detailed else { return info }
             info.sections = [
                 .init(title: "Phase", symbol: symbol, rows: [
@@ -266,11 +271,11 @@ extension SkyModel {
         default:
             let facts = PlanetFacts.all[body]
             var info = ObjectInfo(id: body.id, name: body.name, subtitle: "Planet · \(facts?.type ?? "")", kind: .planet, symbol: nil, tint: tint,
-                                  ringed: body == .saturn,
                                   glance: [.init("Altitude", Fmt.deg(h.altitude, digits: 0)), .init("Direction", Fmt.az(h.azimuth)), .init("Brightness", "mag \(Fmt.mag(b.magnitude))")],
                                   live: [.init("Altitude", Fmt.deg(h.altitude)), .init("Azimuth", Fmt.az(h.azimuth)),
                                          .init("From Earth", "\(Fmt.number(b.distanceKm / 1e6, digits: 0)) M km"), .init("Light travel", Fmt.lightTime(seconds: lightSeconds))],
                                   blurb: facts?.blurb ?? "", tags: [facts?.type ?? "Planet", "mag \(Fmt.mag(b.magnitude))", upTag(h)], isUp: h.altitude > 0)
+            info.art = .planet(body, ringTilt: b.ringTilt)
             guard detailed else { return info }
             var sections: [ObjectInfo.Section] = [
                 .init(title: "Right now", symbol: "dot.scope", rows: [
@@ -280,7 +285,7 @@ extension SkyModel {
                     .init("Magnitude", Fmt.mag(b.magnitude)),
                     .init("Disc lit", "\(Fmt.number(b.illumination * 100, digits: 0))%"),
                     .init("Angle from Sun", Fmt.deg(b.elongation)),
-                ]),
+                ] + (body == .saturn ? [ObjectInfo.Stat("Ring tilt", "\(Fmt.deg(abs(b.ringTilt)))\(abs(b.ringTilt) < 7 ? " · nearly edge-on" : "")")] : [])),
                 timing(bodyAltitude(body)),
             ]
             if let f = facts {
@@ -339,12 +344,14 @@ extension SkyModel {
             }
         }
         let tleAge = (Astro.julianDate(Date()) - sat.sgp4.epochJD)
+        let design = sat.design
         var info = ObjectInfo(id: sat.id, name: sat.displayName, subtitle: subtitle, kind: sat.kind, symbol: symbol, tint: sat.kind.color,
                               glance: [.init("Height", Fmt.km(s.heightKm)), .init("Speed", "\(Fmt.number(s.speedKmS, digits: 2)) km/s"),
                                        .init(s.altitude > 0 ? "Altitude" : "Status", s.altitude > 0 ? Fmt.deg(s.altitude, digits: 0) : "Below")],
                               live: [.init("Altitude", Fmt.deg(s.altitude)), .init("Azimuth", Fmt.az(s.azimuth)),
                                      .init("Range", Fmt.km(s.rangeKm)), .init("Lighting", lightingText(s))],
-                              blurb: blurb, tags: [lightingText(s), "NORAD \(sat.norad)"], isUp: s.altitude > 0)
+                              blurb: design.note.map { blurb + " " + $0 } ?? blurb, tags: [lightingText(s), design.isStarlink ? design.title : "NORAD \(sat.norad)"], isUp: s.altitude > 0)
+        info.art = .satellite(design)
         info.sections = [
             .init(title: "Right now", symbol: "dot.scope", rows: [
                 .init("Height above Earth", Fmt.km(s.heightKm)),
@@ -361,7 +368,9 @@ extension SkyModel {
                 .init("Eccentricity", Fmt.number(sat.omm.ECCENTRICITY, digits: 5)),
             ]),
             .init(title: "Identity", symbol: "number", rows: [
-                .init("Catalogue name", sat.name), .init("NORAD ID", "\(sat.norad)"),
+                .init("Catalogue name", sat.name),
+                .init("Hardware", design.title + (design.isStarlink ? " (est. from launch date)" : "")),
+                .init("NORAD ID", "\(sat.norad)"),
                 .init("International ID", sat.omm.OBJECT_ID ?? "—"), .init("Launched", sat.launchYear ?? "—"),
                 .init("Element set age", "\(Fmt.number(tleAge, digits: 1)) days"),
             ]),
@@ -387,6 +396,7 @@ extension SkyModel {
         let tint: Color
         let altitude: Double?
         let rank: Int
+        var art: ObjectArt? = nil
     }
 
     func searchItems(for layer: SkyLayer?) -> [SearchItem] {
@@ -395,7 +405,8 @@ extension SkyModel {
             for body in Body.allCases {
                 items.append(SearchItem(id: body.id, name: body.name, detail: body == .sun ? "Star" : body == .moon ? "Moon" : "Planet",
                                         symbol: body == .sun ? "sun.max.fill" : body == .moon ? "moon.fill" : "circle.fill",
-                                        tint: Self.bodyColor(body), altitude: horizontals[body.id]?.altitude, rank: 0))
+                                        tint: Self.bodyColor(body), altitude: horizontals[body.id]?.altitude, rank: 0,
+                                        art: bodies[body].map { b in body == .sun ? .sun : body == .moon ? .moon(illumination: b.illumination, waxing: b.waxing) : .planet(body, ringTilt: b.ringTilt) }))
             }
             for d in DeepSkyCatalog.objects {
                 items.append(SearchItem(id: d.id, name: d.name, detail: "\(d.catalog) · \(d.type)", symbol: "sparkles", tint: Theme.lavender,
@@ -403,7 +414,8 @@ extension SkyModel {
             }
             for s in StarCatalog.stars {
                 items.append(SearchItem(id: s.id, name: s.name, detail: "\(s.bayer) · \(s.constellation)", symbol: "star.fill",
-                                        tint: Self.starColor(s.spectral), altitude: horizontals[s.id]?.altitude, rank: 2))
+                                        tint: Self.starColor(s.spectral), altitude: horizontals[s.id]?.altitude, rank: 2,
+                                        art: .star(Self.starColor(s.spectral))))
             }
         }
         for group in SatGroup.allCases {
@@ -413,7 +425,7 @@ extension SkyModel {
                 items.append(SearchItem(id: sat.id, name: sat.displayName, detail: "NORAD \(sat.norad)",
                                         symbol: sat.kind == .station ? "person.2.fill" : sat.kind == .starlink ? "wifi" : "antenna.radiowaves.left.and.right",
                                         tint: sat.kind.color, altitude: satellites.states[sat.id]?.altitude ?? -90,
-                                        rank: sat.kind == .station ? 0 : 3))
+                                        rank: sat.kind == .station ? 0 : 3, art: .satellite(sat.design)))
             }
         }
         return items.sorted {

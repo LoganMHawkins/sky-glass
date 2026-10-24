@@ -21,6 +21,7 @@ struct BodyState: Sendable {
     let phaseAngle: Double
     let elongation: Double    // angle from the Sun
     let moonAge: Double       // days since new moon (Moon only)
+    var ringTilt: Double = 0  // Saturn's ring opening angle seen from Earth, degrees (+ = north face)
 
     var distanceKm: Double { distanceAU * Self.kmPerAU }
     var waxing: Bool { moonAge < 29.530588 / 2 }
@@ -163,6 +164,7 @@ enum SolarSystem {
             let elong = clampAcos((sd * sd + R * R - r * r) / (2 * sd * R))
             let base = 5 * log10(r * R)
             let mag: Double
+            var ringTilt = 0.0
             switch body {
             case .mercury: mag = -0.36 + base + 0.027 * fv + 2.2e-13 * pow(fv, 6)
             case .venus:   mag = -4.34 + base + 0.013 * fv + 4.2e-7 * pow(fv, 3)
@@ -172,11 +174,12 @@ enum SolarSystem {
                 let ir = 28.06 * deg, nr = (169.51 + 3.82e-5 * d) * deg
                 let B = asin(sin(g.lat * deg) * cos(ir) - cos(g.lat * deg) * sin(ir) * sin(g.lon * deg - nr))
                 mag = -9.0 + base + 0.044 * fv - 2.6 * sin(abs(B)) + 1.2 * pow(sin(B), 2)
+                ringTilt = B * rad
             case .uranus:  mag = -7.15 + base + 0.001 * fv
             default:       mag = -6.90 + base + 0.001 * fv
             }
             result[body] = BodyState(body: body, ra: eq.ra, dec: eq.dec, distanceAU: R, heliocentricAU: r, magnitude: mag,
-                                     illumination: (1 + c(fv)) / 2, phaseAngle: fv, elongation: elong, moonAge: 0)
+                                     illumination: (1 + c(fv)) / 2, phaseAngle: fv, elongation: elong, moonAge: 0, ringTilt: ringTilt)
         }
         return result
     }
